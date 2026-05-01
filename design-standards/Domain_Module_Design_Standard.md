@@ -7,9 +7,9 @@
 
 | Attribute | Value |
 |-----------|-------|
-| **Version** | 2.4 |
+| **Version** | 2.5 |
 | **Status** | STANDARD |
-| **Last Updated** | 2026-04-10 |
+| **Last Updated** | 2026-05-01 |
 | **Owner** | Nathan Green, Worldwide Data Architecture Team, Teradata |
 | **Scope** | Domain/Subject Data Module Structure |
 | **Type** | Design Standard (Structural Requirements) |
@@ -1060,6 +1060,7 @@ party_id BIGINT, product_id BIGINT
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
+| 2.5 | 2026-05-01 | Added sections to enforce column comment metadata being generated during the design process, as gaps were observed during testing | Nathan Green, Worldwide Data Architecture Team, Teradata |
 | 2.4 | 2026-04-10 | Section 4.1 updated to address surrogate key instability in SCD Type 2 tables (issue #7). Added note that {entity}_id must NOT use GENERATED ALWAYS AS IDENTITY; updated COMMENT ON COLUMN for {entity}_id to reference keymap sourcing. Added surrogate key strategy reference paragraph after Section 4.1 pointing to Advocated Data Management Standards Section 4 for the full Keymap pattern (DDL, load pattern, child entity exemption, decision tree). Design checklist updated with keymap compliance check. | Nathan Green, Worldwide Data Architecture Team, Teradata |
 | 2.3 | 2026-03-20 | Revised Documentation Capture Requirements section — updated to reflect self-contained data product principle. Documentation tables now reside in the Memory database ({ProductName}_Memory), not a shared dp_documentation database. Removed data_product column from INSERT templates, removed bootstrap checklist item, updated prose references from dp_documentation to Memory database. |
 | 2.2 | 2026-03-20 | Added Section 8.5 Documentation Capture Requirements — minimum dp_documentation records, typical decision categories, output file placement, and reference to Memory Module Section 8 protocol. Updated Section 8.4 checklist to include documentation capture steps. | Nathan Green, Worldwide Data Architecture Team, Teradata |
