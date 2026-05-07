@@ -3,7 +3,7 @@
 
 | **Version** | 1.0 |
 |-------------|-----|
-| **Date** | May 2026 |
+| **Date** | 2026-05-07 |
 | **Status** | Active |
 | **Related documents** | AI_Native_Data_Product_Master_Design |
 
@@ -271,4 +271,4 @@ The assignment of specific users or service accounts to those roles is an **oper
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | May 2026 | Paul Dancer, Worldwide Data Architecture Team, Teradata | Initial Access Layer Design Standard. Established three-tier role model (ROLE_READ, ROLE_AGENT, ROLE_ADMIN), two-phase deployment timing (1.5 and 2.5), grant matrix, DCL template, artefact location convention, and required documentation record. Motivated by D01_MP deployment finding where all module databases were correctly deployed but all consumers received access denied (Error 3523), rendering the product operationally invisible. |
+| 1.0 | 2026-05-07 | Paul Dancer, Worldwide Data Architecture Team, Teradata | Initial Access Layer Design Standard. Established three-tier role model (ROLE_READ, ROLE_AGENT, ROLE_ADMIN), two-phase deployment timing (1.5 and 2.5), grant matrix, DCL template, artefact location convention, and required documentation record. Motivated by D01_MP deployment finding where all module databases were correctly deployed but all consumers received access denied (Error 3523), rendering the product operationally invisible. |

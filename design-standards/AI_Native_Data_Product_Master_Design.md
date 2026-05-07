@@ -1,7 +1,7 @@
 # AI-Native Data Product - Master Design Standard
 
 **Version:** 2.0  
-**Date:** May 2026  
+**Date:** 2026-05-07  
 **Document Type:** Design Standard / Reusable Template  
 **Purpose:** Define the architectural blueprint and design standards for modular, AI-native data products optimized for agentic consumption
 
@@ -812,7 +812,7 @@ In deployments that separate base tables and views into distinct databases, cons
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 2.0 | 2026-05 | Paul Dancer, Worldwide Data Architecture Team, Teradata | Added mandatory Access Layer. New section defining three standard roles (ROLE_READ, ROLE_AGENT, ROLE_ADMIN), two-phase grant timing (Phase 1.5 after Memory+Semantic, Phase 2.5 after Domain+Observability), and guidance for both naming approaches. Updated Documentation Hierarchy tree, Recommended Implementation Order, Module Dependencies diagram, Approach 1 benefits, and Glossary. Full specification in Access_Layer_Design_Standard.md. |
+| 2.0 | 2026-05-07 | Paul Dancer, Worldwide Data Architecture Team, Teradata | Added mandatory Access Layer. New section defining three standard roles (ROLE_READ, ROLE_AGENT, ROLE_ADMIN), two-phase grant timing (Phase 1.5 after Memory+Semantic, Phase 2.5 after Domain+Observability), and guidance for both naming approaches. Updated Documentation Hierarchy tree, Recommended Implementation Order, Module Dependencies diagram, Approach 1 benefits, and Glossary. Full specification in Access_Layer_Design_Standard.md. |
 | 1.9 | 2026-04-15 | Nathan Green, Worldwide Data Architecture Team, Teradata | Established platform neutrality throughout. Updated Executive Summary and Zero Data Duplication principle to remove Teradata-specific language. Added Platform-Neutral Design as Guiding Principle 7. Added Platform Profiles section defining the concept, structure, and current implementations. Refactored Design Constraints section: removed Teradata-Specific Optimizations subsection, added Platform Implementation Notes framing directing implementors to Platform Profiles. Updated Performance Considerations to be platform-neutral. |
 | 1.8 | 2026-03-20 | Nathan Green, Worldwide Data Architecture Team, Teradata | Corrected module deployment order. Memory and Semantic are now Phase 1 (both must exist before any other module deploys — Memory hosts documentation tables, Semantic hosts discovery metadata). Domain and Observability are Phase 2. Search and Prediction are Phase 3. Updated Implementation Order section and Module Dependencies diagram. |
 | 1.7 | 2026-03-20 | Nathan Green, Worldwide Data Architecture Team, Teradata | Fixed = 'Y' filter values in agent discovery example queries to = 1 to align with platform boolean standard. |
