@@ -828,7 +828,23 @@ WHERE p.is_current = 1;
 
 ```sql
 -- Create view to simplify agent queries
-CREATE VIEW Party_Complete AS
+CREATE VIEW Party_Complete
+(
+    -- View contract: agents see all returned columns without parsing the SELECT body
+    party_id,
+    party_key,
+    legal_name,
+    valid_from_dts,
+    valid_to_dts,
+    last_changed_by,
+    last_changed_dts,
+    change_reason,
+    source_system,
+    batch_id,
+    quality_score,
+    quality_evaluated_dts
+)
+AS
 SELECT 
     p.party_id, p.party_key, p.legal_name,
     p.valid_from_dts, p.valid_to_dts,
@@ -1028,7 +1044,17 @@ WHERE p.is_current = 1
 ### 8.4 Advocated: Use Views for Agent Access
 
 ```sql
-CREATE VIEW Party_HighQuality AS
+CREATE VIEW Party_HighQuality
+(
+    -- View contract: agents see all returned columns without parsing the SELECT body
+    party_id,
+    party_key,
+    legal_name,
+    quality_score,
+    evaluated_dts,
+    rule_results_json
+)
+AS
 SELECT p.party_id, p.party_key, p.legal_name,
        dq.quality_score, dq.evaluated_dts,
        dq.rule_results_json
