@@ -809,7 +809,7 @@ mechanisms). Neither blocks the other.
 | Document                                                | Location                                                                                                            |
 | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | **Object Placement Standard — Interface Specification** | [`platform-standards/Object_Placement_Standard_Spec.md`](../platform-standards/Object_Placement_Standard_Spec.md) — platform-agnostic; the contract |
-| **Teradata reference implementation**                   | `Object_Placement_Standard_Teradata.md` — conforming implementation for Teradata; distributed separately |
+|**Teradata reference implementation**                   | `Object_Placement_Standard_Teradata.md` — conforming implementation for Teradata; distributed separately |
 
 Implementations for other platforms (Snowflake, BigQuery,
 Databricks, etc.) follow the same Interface Specification with
