@@ -26,6 +26,7 @@ directly.
 ai-native-data-products/
 ├── design-standards/        ← master source of truth
 │   ├── AI_Native_Data_Product_Master_Design.md
+│   ├── Access_Layer_Design_Standard.md
 │   ├── Advocated_Data_Management_Standards.md
 │   ├── Domain_Module_Design_Standard.md
 │   ├── Semantic_Module_Design_Standard.md
