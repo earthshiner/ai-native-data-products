@@ -27,15 +27,20 @@ ai-native-data-product.skill (zip)
 ├── SKILL.md                    ← always read by orchestrator and every sub-agent
 │                                  core principles, architecture, naming conventions,
 │                                  deployment order, documentation capture protocol,
-│                                  sub-agent routing instructions
+│                                  sub-agent routing instructions,
+│                                  contract-aware guiding principle
 └── modules/
       ├── domain.md             ← read when designing Domain module
       ├── semantic.md           ← read when designing Semantic module
       ├── search.md             ← read when designing Search module
       ├── prediction.md         ← read when designing Prediction module
       ├── observability.md      ← read when designing Observability module
-      └── memory.md             ← read when designing Memory module
-                                   (includes Documentation Sub-Module)
+      ├── memory.md             ← read when designing Memory module
+      │                            (includes Documentation Sub-Module)
+      └── contract.md           ← read when adding the Data Contract backbone
+                                   cross-cutting: Semantic + Observability + Memory
+                                   tables, publication gate, rule sub-types,
+                                   external standards integration
 ```
 
 **SKILL.md** is read by every agent — orchestrator and sub-agents alike.
@@ -59,6 +64,7 @@ assume SKILL.md has been read and do not repeat its content.
    - `Prediction_Module_Design_Standard.md`
    - `Observability_Module_Design_Standard.md`
    - `Memory_Module_Design_Standard.md`
+   - `Data_Contract_Design_Standard.md`
 3. Attach `Advocated_Data_Management_Standards.md`
 4. Paste this prompt
 
@@ -168,7 +174,9 @@ no module-specific content. Target: 100–150 lines. Hard limit: 175 lines.
    designing that module."
 
 8. **Module file index** — one-line description of each module file
-   and when to load it
+   and when to load it. Must include `contract.md`: "Read when adding the Data
+   Contract backbone to an existing or new product. Cross-cutting: adds tables
+   to Semantic, Observability, and Memory."
 
 **SKILL.md must NOT contain:**
 - DDL templates
@@ -233,6 +241,57 @@ Each module file must contain, in this order:
 - Recursive CTEs (Semantic `v_relationship_paths`)
 - TD_VectorDistance function calls (Search)
 - Any SQL marked as `TESTED ✅` in the source documents
+- Publication gate `EXISTS` subquery pattern (contract.md)
+- All view column lists — every `REPLACE VIEW` in the contract standard has an explicit
+  column list before `AS`; preserve this exactly so agents can discover columns
+  from the DDL without parsing the SELECT clause
+
+**Special instructions for `contract.md`:**
+
+The contract module file is different from the other six in one important way:
+it is **cross-cutting** — it does not own a single database; it adds tables to
+three existing module databases (Semantic, Observability, Memory). The file must
+make this clear upfront.
+
+`contract.md` must contain:
+
+1. **Cross-cutting header** — "The contract backbone adds tables to Semantic, Observability,
+   and Memory. It does not create a new module database."
+
+2. **Module responsibility mapping table** — which tables go in which database
+
+3. **Semantic module additions** — DDL templates for:
+   `contract`, `contract_version`, `contract_interface`, `contract_field`,
+   `contract_rule`, `contract_consumer`, `contract_server`, `contract_stakeholder`,
+   `contract_tag`
+
+4. **Observability module additions** — DDL templates for:
+   `contract_validation_run`, `contract_validation_result`, `contract_violation`,
+   `contract_sla_status`
+
+5. **Memory module additions** — DDL templates for:
+   `contract_change_log`, `contract_design_decision`, `contract_consumer_signoff`
+
+6. **View DDL templates** — all 14 views from §12 of the Data Contract Design Standard,
+   each with its explicit column list. Views are grouped by database:
+   Semantic_V (discovery + export), Observability_V (evidence + consumer impact),
+   Memory_V (governance)
+
+7. **Publication gate pattern** — the Access layer `EXISTS` subquery that checks
+   `publication_status = 'PUBLISHED'` before serving data. Must include the full
+   column-list `REPLACE VIEW` pattern.
+
+8. **Contract floor rules** — the four mandatory rule sub-types
+   (FRESHNESS_MAX_AGE, ROW_COUNT_MIN, NULL_RATE_MAX on PK, SCHEMA_VALIDATION)
+   with example INSERT templates
+
+9. **rule_sub_type reference** — the complete enumeration table from §4.4.1
+   of the Data Contract Design Standard
+
+10. **External standards quick reference** — a compact mapping table showing
+    which contract tables feed ODCS, DPDS, DCAT, DataHub, OpenMetadata,
+    OpenLineage, and OpenTelemetry. Do not repeat the full §10 content —
+    just the source-table mapping.
 
 **Content to add that source documents typically omit:**
 - The expire-current → insert-new DML pattern for all temporal tables
@@ -278,7 +337,8 @@ at the top of the DDL section with a note: "apply to all temporal tables."
 - [ ] No DDL or query syntax
 - [ ] Documentation capture protocol complete and accurate
 - [ ] Sub-agent routing instructions clear and unambiguous
-- [ ] All six modules listed in module file index
+- [ ] All six modules AND contract.md listed in module file index
+- [ ] Contract-aware guiding principle present (every public-facing interface has a contract)
 
 **Each module file:**
 - [ ] Under 500 lines
@@ -344,9 +404,11 @@ The skill name must not change between versions: `ai-native-data-product`
 | File | Target | Hard limit |
 |------|--------|-----------|
 | `SKILL.md` | 100–150 lines | 175 lines |
-| Any single module file | 300–400 lines | 500 lines |
-| Total (all files combined) | < 2,800 lines | 3,200 lines |
+| Any single module file (domain–memory) | 300–400 lines | 500 lines |
+| `contract.md` | 400–500 lines | 600 lines (more tables than a single module) |
+| Total (all files combined) | < 3,400 lines | 3,800 lines |
 | Typical sub-agent context (SKILL.md + 1 module) | 400–550 lines | — |
+| Contract sub-agent context (SKILL.md + contract.md) | 500–675 lines | — |
 
 ## Reference: Skill Directory Structure
 
@@ -359,7 +421,8 @@ ai-native-data-product/
     ├── search.md
     ├── prediction.md
     ├── observability.md
-    └── memory.md
+    ├── memory.md
+    └── contract.md       ← cross-cutting; adds tables to Semantic, Observability, Memory
 ```
 
 ## Reference: Module Deployment Order
@@ -383,3 +446,8 @@ ai-native-data-product/
 | Prediction | DD-PREDICTION- | CL-PREDICTION- | QC-PREDICTION- | IN-PREDICTION- |
 | Observability | DD-OBSERVABILITY- | CL-OBSERVABILITY- | QC-OBSERVABILITY- | IN-OBSERVABILITY- |
 | Memory | DD-MEMORY- | CL-MEMORY- | QC-MEMORY- | IN-MEMORY- |
+| Contract | DD-CONTRACT- | CL-CONTRACT- | QC-CONTRACT- | IN-CONTRACT- |
+
+> Contract decisions live in `{ProductName}_Memory.contract_design_decision`, not in
+> the general Memory `Design_Decision` table. The ID prefix `DD-CONTRACT-` is used in
+> the `decision_id` column of `contract_design_decision`.
