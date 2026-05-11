@@ -1,0 +1,975 @@
+<!doctype html>
+<html id="mdhtml">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
+    <meta http-equiv="X-UA-Compatible" content="IE=9">
+    <title>Markdown preview</title>
+    <style>body {
+  box-sizing: border-box;
+  min-width: 200px;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 45px;
+  background-color: #313131;
+  color: #c3c5c7;
+}
+
+@font-face {
+  font-family: octicons-link;
+  src: url(data:font/woff;charset=utf-8;base64,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) format('woff');
+}
+
+.markdown-body {
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 16px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.markdown-body .pl-c {
+  color: #6a737d;
+}
+
+.markdown-body .pl-c1,
+.markdown-body .pl-s .pl-v {
+  color: #005cc5;
+}
+
+.markdown-body .pl-e,
+.markdown-body .pl-en {
+  color: #6f42c1;
+}
+
+.markdown-body .pl-smi,
+.markdown-body .pl-s .pl-s1 {
+  color: #24292e;
+}
+
+.markdown-body .pl-ent {
+  color: #22863a;
+}
+
+.markdown-body .pl-k {
+  color: #d73a49;
+}
+
+.markdown-body .pl-s,
+.markdown-body .pl-pds,
+.markdown-body .pl-s .pl-pse .pl-s1,
+.markdown-body .pl-sr,
+.markdown-body .pl-sr .pl-cce,
+.markdown-body .pl-sr .pl-sre,
+.markdown-body .pl-sr .pl-sra {
+  color: #032f62;
+}
+
+.markdown-body .pl-v,
+.markdown-body .pl-smw {
+  color: #e36209;
+}
+
+.markdown-body .pl-bu {
+  color: #b31d28;
+}
+
+.markdown-body .pl-ii {
+  color: #fafbfc;
+  background-color: #b31d28;
+}
+
+.markdown-body .pl-c2 {
+  color: #fafbfc;
+  background-color: #d73a49;
+}
+
+.markdown-body .pl-c2::before {
+  content: "^M";
+}
+
+.markdown-body .pl-sr .pl-cce {
+  font-weight: bold;
+  color: #22863a;
+}
+
+.markdown-body .pl-ml {
+  color: #735c0f;
+}
+
+.markdown-body .pl-mh,
+.markdown-body .pl-mh .pl-en,
+.markdown-body .pl-ms {
+  font-weight: bold;
+  color: #005cc5;
+}
+
+.markdown-body .pl-mi {
+  font-style: italic;
+  color: #24292e;
+}
+
+.markdown-body .pl-mb {
+  font-weight: bold;
+  color: #24292e;
+}
+
+.markdown-body .pl-md {
+  color: #b31d28;
+  background-color: #ffeef0;
+}
+
+.markdown-body .pl-mi1 {
+  color: #22863a;
+  background-color: #f0fff4;
+}
+
+.markdown-body .pl-mc {
+  color: #e36209;
+  background-color: #ffebda;
+}
+
+.markdown-body .pl-mi2 {
+  color: #f6f8fa;
+  background-color: #005cc5;
+}
+
+.markdown-body .pl-mdr {
+  font-weight: bold;
+  color: #6f42c1;
+}
+
+.markdown-body .pl-ba {
+  color: #586069;
+}
+
+.markdown-body .pl-sg {
+  color: #959da5;
+}
+
+.markdown-body .pl-corl {
+  text-decoration: underline;
+  color: #032f62;
+}
+
+.markdown-body .octicon {
+  display: inline-block;
+  vertical-align: text-top;
+  fill: currentColor;
+}
+
+.markdown-body a {
+  background-color: transparent;
+}
+
+.markdown-body a:active,
+.markdown-body a:hover {
+  outline-width: 0;
+}
+
+.markdown-body h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+.markdown-body img {
+  border-style: none;
+}
+
+.markdown-body code,
+.markdown-body kbd,
+.markdown-body pre {
+  font-family: monospace, monospace;
+  font-size: 1em;
+}
+
+.markdown-body hr {
+  box-sizing: content-box;
+  height: 0;
+  overflow: visible;
+}
+
+.markdown-body input {
+  font: inherit;
+  margin: 0;
+}
+
+.markdown-body input {
+  overflow: visible;
+}
+
+.markdown-body [type="checkbox"] {
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.markdown-body * {
+  box-sizing: border-box;
+}
+
+.markdown-body input {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.markdown-body a {
+  color: rgba(167, 234, 140, 0.94);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.markdown-body strong {
+  font-weight: 700;
+}
+
+.markdown-body hr {
+  height: 0;
+  margin: 15px 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #dfe2e5;
+}
+
+.markdown-body hr::before {
+  display: table;
+  content: "";
+}
+
+.markdown-body hr::after {
+  display: table;
+  clear: both;
+  content: "";
+}
+
+.markdown-body table {
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.markdown-body td,
+.markdown-body th {
+  padding: 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body h1 {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.markdown-body h2 {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.markdown-body h3 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.markdown-body h4 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.markdown-body h5 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.markdown-body h6 {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.markdown-body p {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.markdown-body blockquote {
+  margin: 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body ol ol,
+.markdown-body ul ol {
+  list-style-type: lower-roman;
+}
+
+.markdown-body ul ul ol,
+.markdown-body ul ol ol,
+.markdown-body ol ul ol,
+.markdown-body ol ol ol {
+  list-style-type: lower-alpha;
+}
+
+.markdown-body dd {
+  margin-left: 0;
+}
+
+.markdown-body code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font-size: 12px;
+}
+
+.markdown-body pre {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font-size: 12px;
+}
+
+.markdown-body .octicon {
+  vertical-align: text-bottom;
+}
+
+.markdown-body .pl-0 {
+  padding-left: 0 !important;
+}
+
+.markdown-body .pl-1 {
+  padding-left: 4px !important;
+}
+
+.markdown-body .pl-2 {
+  padding-left: 8px !important;
+}
+
+.markdown-body .pl-3 {
+  padding-left: 16px !important;
+}
+
+.markdown-body .pl-4 {
+  padding-left: 24px !important;
+}
+
+.markdown-body .pl-5 {
+  padding-left: 32px !important;
+}
+
+.markdown-body .pl-6 {
+  padding-left: 40px !important;
+}
+
+.markdown-body::before {
+  display: table;
+  content: "";
+}
+
+.markdown-body::after {
+  display: table;
+  clear: both;
+  content: "";
+}
+
+.markdown-body>*:first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-body>*:last-child {
+  margin-bottom: 0 !important;
+}
+
+.markdown-body a:not([href]) {
+  color: inherit;
+  text-decoration: none;
+}
+
+.markdown-body .anchor {
+  float: left;
+  padding-right: 4px;
+  margin-left: -20px;
+  line-height: 1;
+}
+
+.markdown-body .anchor:focus {
+  outline: none;
+}
+
+.markdown-body p,
+.markdown-body blockquote,
+.markdown-body ul,
+.markdown-body ol,
+.markdown-body dl,
+.markdown-body table,
+.markdown-body pre {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.markdown-body hr {
+  height:1px;
+  padding: 0;
+  margin: 24px 0;
+  background-color: #828282;
+  border: 0;
+}
+
+.markdown-body blockquote {
+  padding: 0 1em;
+  color: #9fa0a0;
+  border-left: 0.25em solid #292929;
+  font-style: italic;
+}
+
+.markdown-body blockquote>:first-child {
+  margin-top: 0;
+}
+
+.markdown-body blockquote>:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body kbd {
+  display: inline-block;
+  padding: 3px 5px;
+  font-size: 11px;
+  line-height: 10px;
+  color: #444d56;
+  vertical-align: middle;
+  background-color: #fafbfc;
+  border: solid 1px #c6cbd1;
+  border-bottom-color: #959da5;
+  border-radius: 3px;
+  box-shadow: inset 0 -1px 0 #959da5;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-body h1 .octicon-link,
+.markdown-body h2 .octicon-link,
+.markdown-body h3 .octicon-link,
+.markdown-body h4 .octicon-link,
+.markdown-body h5 .octicon-link,
+.markdown-body h6 .octicon-link {
+  color: #1b1f23;
+  vertical-align: middle;
+  visibility: hidden;
+}
+
+.markdown-body h1:hover .anchor,
+.markdown-body h2:hover .anchor,
+.markdown-body h3:hover .anchor,
+.markdown-body h4:hover .anchor,
+.markdown-body h5:hover .anchor,
+.markdown-body h6:hover .anchor {
+  text-decoration: none;
+}
+
+.markdown-body h1:hover .anchor .octicon-link,
+.markdown-body h2:hover .anchor .octicon-link,
+.markdown-body h3:hover .anchor .octicon-link,
+.markdown-body h4:hover .anchor .octicon-link,
+.markdown-body h5:hover .anchor .octicon-link,
+.markdown-body h6:hover .anchor .octicon-link {
+  visibility: visible;
+}
+
+.markdown-body h1 {
+  padding-bottom: 0.3em;
+  font-size: 2em;
+  border-bottom: 1px solid #484848;
+}
+
+.markdown-body h2 {
+  padding-bottom: 0.3em;
+  font-size: 1.5em;
+  border-bottom: 1px solid #484848;
+}
+
+.markdown-body h3 {
+  font-size: 1.25em;
+}
+
+.markdown-body h4 {
+  font-size: 1em;
+}
+
+.markdown-body h5 {
+  font-size: 0.875em;
+}
+
+.markdown-body h6 {
+  font-size: 0.85em;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 2em;
+}
+
+.markdown-body ul ul,
+.markdown-body ul ol,
+.markdown-body ol ol,
+.markdown-body ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body li {
+  word-wrap: break-all;
+}
+
+.markdown-body li>p {
+  margin-top: 16px;
+}
+
+.markdown-body li+li {
+  margin-top: 0.25em;
+}
+
+.markdown-body dl {
+  padding: 0;
+}
+
+.markdown-body dl dt {
+  padding: 0;
+  margin-top: 16px;
+  font-size: 1em;
+  font-style: italic;
+  font-weight: 600;
+}
+
+.markdown-body dl dd {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.markdown-body table {
+  display: block;
+  overflow: auto;
+}
+
+.markdown-body table th {
+  font-weight: 600;
+  background-color: #292929;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+  padding: 6px 13px;
+  border: 1px solid #636363;
+}
+
+.markdown-body table tr {
+  border-top: 1px solid #636363;
+}
+
+
+.markdown-body img {
+  max-width: 100%;
+  box-sizing: content-box;
+}
+
+.markdown-body img[align=right] {
+  padding-left: 20px;
+}
+
+.markdown-body img[align=left] {
+  padding-right: 20px;
+}
+
+.markdown-body code {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  background-color: #292929;
+  border: 1px solid #676767;
+  border-radius: 3px;
+}
+
+.markdown-body pre {
+  word-wrap: normal;
+}
+
+.markdown-body pre>code {
+  padding: 0;
+  margin: 0;
+  font-size: 100%;
+  word-break: normal;
+  white-space: pre;
+  background: transparent;
+  border: 0;
+}
+
+.markdown-body .highlight {
+  margin-bottom: 16px;
+}
+
+.markdown-body .highlight pre {
+  margin-bottom: 0;
+  word-break: normal;
+}
+
+.markdown-body .highlight pre,
+.markdown-body pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #292929;
+  border-radius: 3px;
+}
+
+.markdown-body pre code {
+  display: inline;
+  max-width: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  line-height: inherit;
+  word-wrap: normal;
+  background-color: transparent;
+  border: 0;
+}
+
+.markdown-body .full-commit .btn-outline:not(:disabled):hover {
+  color: #005cc5;
+  border-color: #005cc5;
+}
+
+.markdown-body kbd {
+  display: inline-block;
+  padding: 3px 5px;
+  font: 11px "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  line-height: 10px;
+  color: #444d56;
+  vertical-align: middle;
+  background-color: #fafbfc;
+  border: solid 1px #d1d5da;
+  border-bottom-color: #c6cbd1;
+  border-radius: 3px;
+  box-shadow: inset 0 -1px 0 #c6cbd1;
+}
+
+.markdown-body :checked+.radio-label {
+  position: relative;
+  z-index: 1;
+  border-color: #0366d6;
+}
+
+.markdown-body .task-list-item {
+  list-style-type: none;
+}
+
+.markdown-body .task-list-item+.task-list-item {
+  margin-top: 3px;
+}
+
+.markdown-body .task-list-item input {
+  margin: 0 0.2em 0.25em -1.6em;
+  vertical-align: middle;
+}
+
+.markdown-body hr {
+  border-bottom-color: #eee;
+}</style>
+  </head>
+  <body>
+    <article class="markdown-body">
+      <h1 data-sourcepos="1:1-1:56">AI-Native Data Product — Contract Discovery Protocol</h1>
+<h2 data-sourcepos="2:1-2:63">Agent Prompt Fragment for Contract-Aware Data Product Access</h2>
+<hr data-sourcepos="4:1-5:0" />
+<h2 data-sourcepos="6:1-6:10">Purpose</h2>
+<p data-sourcepos="8:1-11:81">This prompt fragment extends the <strong>AI-Native Data Product Discovery Protocol</strong>
+(<code>Access_Data_Product_Starter.md</code>) with contract-awareness. Include it alongside
+that fragment when an agent needs to understand what an interface promises,
+whether it is currently compliant, and what consumers are affected by violations.</p>
+<p data-sourcepos="13:1-14:80">This fragment assumes the agent has already completed standard product discovery
+(module map, entity metadata, relationships). It adds a contract discovery tier.</p>
+<hr data-sourcepos="16:1-17:0" />
+<h2 data-sourcepos="18:1-18:51">Prompt Fragment (Include in Agent System Prompt)</h2>
+<pre data-sourcepos="20:1-52:3"><code class="language-markdown">## Contract Discovery Protocol
+
+### When to Use
+
+Before consuming any data from a contracted interface, or when asked to:
+- Assess whether an interface is safe to use
+- Explain what an interface promises
+- Identify who is affected by a quality issue
+- Check whether data from a specific run was produced from a compliant interface
+
+### Discovery Tier 4: Find Contracted Interfaces
+
+After standard product discovery, query the contract backbone:
+
+```sql
+-- What interfaces are contracted, and are they currently compliant?
+SELECT
+     contract_key
+    ,interface_name
+    ,interface_description
+    ,interface_type
+    ,database_name
+    ,object_name
+    ,validation_status
+    ,publication_status
+    ,is_compliant
+    ,freshness_sla_minutes
+    ,last_validated_dts
+FROM {Product}_Semantic_V.contract_current_interface
+ORDER BY interface_name
+;
+</code></pre>
+<p data-sourcepos="54:1-54:32"><strong>Interpreting <code>is_compliant</code>:</strong></p>
+<ul data-sourcepos="55:1-57:0">
+<li data-sourcepos="55:1-55:91"><code>1</code> = the interface is <code>PUBLISHED</code> — data is being served and all CRITICAL rules passed</li>
+<li data-sourcepos="56:1-57:0"><code>0</code> = the interface is <code>NON_COMPLIANT</code>, <code>SUSPENDED</code>, or <code>UNPUBLISHED</code> — do not consume</li>
+</ul>
+<p data-sourcepos="58:1-58:38"><strong>Interpreting <code>publication_status</code>:</strong></p>
+<ul data-sourcepos="59:1-63:0">
+<li data-sourcepos="59:1-59:33"><code>PUBLISHED</code> — safe to consume</li>
+<li data-sourcepos="60:1-60:103"><code>NON_COMPLIANT</code> — CRITICAL validation failure; the Access layer view returns no rows until resolved</li>
+<li data-sourcepos="61:1-61:86"><code>SUSPENDED</code> — manually suspended; enquire with the contract owner before consuming</li>
+<li data-sourcepos="62:1-63:0"><code>UNPUBLISHED</code> — not yet through a validation cycle; treat as unavailable</li>
+</ul>
+<h3 data-sourcepos="64:1-64:53">Discovery Tier 5: Understand the Contract Promise</h3>
+<p data-sourcepos="66:1-66:49">To understand what a specific interface promises:</p>
+<pre data-sourcepos="68:1-101:3"><code class="language-sql">-- What fields are contracted, their types, and classification?
+SELECT
+     interface_name
+    ,field_name
+    ,field_description
+    ,data_type
+    ,is_nullable
+    ,data_classification
+    ,is_pii
+    ,breaking_change_rule
+FROM {Product}_Semantic_V.contract_current_field
+WHERE interface_name = '{interface_name}'
+ORDER BY field_name
+;
+
+-- What quality rules apply to this interface?
+SELECT
+     interface_name
+    ,field_name
+    ,rule_name
+    ,rule_type
+    ,rule_sub_type
+    ,rule_description
+    ,rule_severity
+    ,threshold_value
+    ,threshold_operator
+    ,threshold_unit
+    ,gates_publication
+FROM {Product}_Semantic_V.contract_current_rule
+WHERE interface_name = '{interface_name}'
+ORDER BY rule_severity, rule_type
+;
+</code></pre>
+<h3 data-sourcepos="103:1-103:55">Discovery Tier 6: Check Current Compliance Evidence</h3>
+<p data-sourcepos="105:1-105:56">To check the latest validation results before consuming:</p>
+<pre data-sourcepos="107:1-141:3"><code class="language-sql">-- What was the result of the last validation cycle?
+SELECT
+     contract_key
+    ,interface_name
+    ,run_status
+    ,rules_total
+    ,rules_passed
+    ,rules_failed
+    ,rules_warned
+    ,run_started_dts
+    ,run_completed_dts
+    ,is_compliant
+FROM {Product}_Observability_V.contract_latest_validation
+WHERE interface_name = '{interface_name}'
+;
+
+-- Are there any open violations I should know about?
+SELECT
+     interface_name
+    ,violation_type
+    ,rule_name
+    ,rule_severity
+    ,violation_message
+    ,affected_consumer_count
+    ,detected_dts
+    ,remediation_status
+FROM {Product}_Observability_V.contract_violation_summary
+WHERE interface_name = '{interface_name}'
+  AND remediation_status = 'OPEN'
+ORDER BY
+     CASE rule_severity WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2
+                        WHEN 'MEDIUM' THEN 3 ELSE 4 END
+;
+</code></pre>
+<h3 data-sourcepos="143:1-143:68">Discovery Tier 7: Consumer Impact (If Investigating a Violation)</h3>
+<p data-sourcepos="145:1-145:64">If investigating whether a violation affects specific consumers:</p>
+<pre data-sourcepos="147:1-176:3"><code class="language-sql">-- Who is registered as a consumer of this interface?
+SELECT
+     interface_name
+    ,version_number
+    ,consumer_name
+    ,consumer_owner
+    ,consumer_purpose
+    ,data_classification_access
+    ,notification_channel
+    ,registration_status
+FROM {Product}_Observability_V.contract_registered_consumer
+WHERE interface_name = '{interface_name}'
+  AND registration_status = 'ACTIVE'
+;
+
+-- Which consumers are affected by the current open violations?
+SELECT
+     interface_name
+    ,violation_type
+    ,rule_severity
+    ,consumer_name
+    ,consumer_owner
+    ,notification_channel
+    ,affected_since_dts
+    ,remediation_status
+FROM {Product}_Observability_V.contract_consumer_impact
+WHERE interface_name = '{interface_name}'
+;
+</code></pre>
+<h3 data-sourcepos="178:1-178:49">Key Principles for Contract-Aware Consumption</h3>
+<p data-sourcepos="180:1-180:54"><strong>1. Always check <code>is_compliant</code> before loading data</strong></p>
+<p data-sourcepos="182:1-185:24">If <code>is_compliant = 0</code>, the interface may return no rows (BLOCKING mode) or stale/
+invalid data (ADVISORY mode). Do not load data from a <code>NON_COMPLIANT</code> interface
+into a downstream model, report, or production system without explicit approval
+from the contract owner.</p>
+<p data-sourcepos="187:1-187:69"><strong>2. A view returning no rows may be the contract working correctly</strong></p>
+<p data-sourcepos="189:1-191:82">If a contracted interface returns no rows and <code>publication_status = 'NON_COMPLIANT'</code>,
+that is the publication gate working as designed — the interface is refusing to serve
+data that failed its quality checks. This is not a bug. Notify the contract owner.</p>
+<p data-sourcepos="193:1-193:49"><strong>3. Consume the version you registered against</strong></p>
+<p data-sourcepos="195:1-197:77">If you are a registered consumer, consume the contract version recorded in
+<code>contract_consumer.contract_version_id</code>. If a new version is available, check
+<code>contract_current_interface</code> for the version number and migrate deliberately.</p>
+<p data-sourcepos="199:1-199:61"><strong>4. Use the lineage context view for auditable consumption</strong></p>
+<p data-sourcepos="201:1-203:52">When your consumption of the interface will be recorded in a lineage system,
+join your query result to <code>contract_lineage_context_v</code> to attach the contract
+version and validation status to your lineage event:</p>
+<pre data-sourcepos="205:1-216:3"><code class="language-sql">SELECT
+     lc.contract_key
+    ,lc.version_number         AS contract_version
+    ,lc.validation_run_id
+    ,lc.validation_run_status
+    ,lc.is_compliant
+    ,lc.datahub_dataset_urn
+FROM {Product}_Semantic_V.contract_lineage_context_v AS lc
+WHERE lc.interface_name = '{interface_name}'
+;
+</code></pre>
+<p data-sourcepos="218:1-218:55"><strong>5. Field classification governs what you may retain</strong></p>
+<p data-sourcepos="220:1-223:74"><code>contract_field.data_classification</code> tells you the highest classification level of
+each field. Your consuming system's registered <code>data_classification_access</code> in
+<code>contract_consumer</code> must permit that level. Never retain or forward <code>CONFIDENTIAL</code>
+or <code>RESTRICTED</code> fields to a system not authorised for that classification.</p>
+<h3 data-sourcepos="225:1-225:40">Standard Contract Discovery Sequence</h3>
+<p data-sourcepos="227:1-227:48">When starting work on a contracted data product:</p>
+<pre data-sourcepos="229:1-250:3"><code class="language-sql">-- Step 1: Discover contracted interfaces and their compliance
+SELECT interface_name, is_compliant, publication_status
+FROM {Product}_Semantic_V.contract_current_interface;
+
+-- Step 2: For each interface you will use — check the promise
+SELECT field_name, data_type, is_nullable, data_classification
+FROM {Product}_Semantic_V.contract_current_field
+WHERE interface_name = '{target_interface}';
+
+-- Step 3: Check latest validation evidence
+SELECT run_status, rules_failed, is_compliant
+FROM {Product}_Observability_V.contract_latest_validation
+WHERE interface_name = '{target_interface}';
+
+-- Step 4: If any violations exist, assess consumer impact
+SELECT consumer_name, rule_severity, remediation_status
+FROM {Product}_Observability_V.contract_consumer_impact
+WHERE interface_name = '{target_interface}';
+
+-- Step 5: Ready to consume (only if is_compliant = 1)
+</code></pre>
+<h3 data-sourcepos="252:1-252:18">Error Handling</h3>
+<p data-sourcepos="254:1-257:32"><strong>If <code>contract_current_interface</code> does not exist:</strong>
+The product may not have been upgraded to the Data Contract Design Standard.
+Fall back to standard discovery. The interface has no formal promise — document
+this assumption in your run log.</p>
+<p data-sourcepos="259:1-262:52"><strong>If <code>is_compliant = 0</code> for your target interface:</strong>
+Do not consume. Query <code>contract_violation_summary</code> to understand why. Notify the
+contract owner via the <code>owner_contact</code> in <code>contract_current</code>. Wait for
+<code>publication_status = 'PUBLISHED'</code> before consuming.</p>
+<p data-sourcepos="264:1-268:21"><strong>If the interface returns no rows despite <code>is_compliant = 1</code>:</strong>
+This is a data issue, not a contract issue. The contract passed its validation
+cycle but the business data itself is empty. Query <code>contract_latest_validation</code>
+for <code>rules_passed</code> and <code>run_status = 'PASS'</code> to confirm. Then investigate the
+source data pipeline.</p>
+<pre data-sourcepos="269:1-305:3"><code>
+---
+
+## Notes for Prompt Engineers
+
+**When to include this fragment:**
+- Agent will consume data from a product that has the contract backbone deployed
+- Agent needs to make trust decisions about data quality before loading
+- Agent is performing compliance checks, audit queries, or lineage enrichment
+- Agent is investigating a data quality incident
+
+**When NOT to include:**
+- Agent is only exploring schema structure (use `Access_Data_Product_Starter.md` alone)
+- The product has not yet had the contract backbone added
+
+**Combination with existing protocols:**
+Include after the standard discovery tiers in `Access_Data_Product_Starter.md`.
+This fragment adds Tiers 4–7 to the existing Tiers 1–3 (module map, entity metadata,
+relationships).
+
+**OpenTelemetry span enrichment:**
+When the agent is executing inside an instrumented pipeline, the `contract_telemetry_context_v`
+view provides the standard OpenTelemetry span attributes. These should be added to any
+span that touches a contracted interface:
+
+```sql
+SELECT
+     contract_key         AS &quot;data_product.contract.id&quot;
+    ,contract_version     AS &quot;data_product.contract.version&quot;
+    ,is_compliant         AS &quot;data_product.contract.is_compliant&quot;
+    ,publication_status   AS &quot;data_product.interface.publication_status&quot;
+    ,consumer_count       AS &quot;data_product.contract.consumer_count&quot;
+FROM {Product}_Semantic_V.contract_telemetry_context_v
+WHERE interface_name = '{interface_name}'
+;
+</code></pre>
+<hr data-sourcepos="307:1-308:0" />
+<p data-sourcepos="309:1-310:53"><strong>This prompt fragment is reusable across any AI-Native Data Product deployment
+that has the Data Contract Design Standard applied.</strong></p>
+
+    </article>
+  </body>
+</html>
