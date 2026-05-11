@@ -1,0 +1,2260 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contract Operations Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary-dark: #0E2A33;
+  --teal: #196F6B;
+  --teal-light: #E7F3F1;
+  --teal-mid: #DCF0EE;
+  --white: #FFFFFF;
+  --body: #374151;
+  --muted: #6B7280;
+  --border: #E5E7EB;
+  --bg: #F9FAFB;
+
+  --green: #059669;
+  --amber: #D97706;
+  --red: #DC2626;
+  --purple: #7C3AED;
+  --grey: #6B7280;
+
+  --green-bg: #ECFDF5;
+  --amber-bg: #FFFBEB;
+  --red-bg: #FEF2F2;
+  --purple-bg: #F5F3FF;
+  --grey-bg: #F3F4F6;
+
+  --severity-critical-bg: #FEE2E2;
+  --severity-critical-text: #DC2626;
+  --severity-high-bg: #FEF3C7;
+  --severity-high-text: #D97706;
+  --severity-medium-bg: #FEF9C3;
+  --severity-medium-text: #92400E;
+  --severity-low-bg: #F0FDF4;
+  --severity-low-text: #059669;
+
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.10), 0 4px 6px rgba(0,0,0,0.05);
+}
+
+html, body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--body);
+  background: var(--bg);
+  min-width: 1280px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--primary-dark);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.header-brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 2px rgba(5,150,105,0.35);
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(5,150,105,0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(5,150,105,0.2); }
+}
+
+.header-brand-name {
+  color: var(--white);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.header-centre {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.product-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-select-label {
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.product-select {
+  appearance: none;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--white);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 32px 6px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  min-width: 200px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.product-select:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.35); }
+.product-select:focus { outline: none; border-color: var(--teal); }
+.product-select option { background: var(--primary-dark); color: var(--white); }
+
+.product-select-chevron {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: rgba(255,255,255,0.6);
+  font-size: 10px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.refresh-time {
+  color: rgba(255,255,255,0.55);
+  font-size: 12px;
+}
+
+.refresh-time strong {
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
+}
+
+.btn-refresh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--teal);
+  border: none;
+  color: var(--white);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-refresh:hover { background: #145c58; }
+
+.refresh-icon {
+  display: inline-block;
+  font-size: 14px;
+  transition: transform 0.6s ease;
+}
+
+.refresh-icon.spinning { transform: rotate(360deg); }
+
+.env-badge {
+  background: var(--green);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.08em;
+}
+
+/* ============================================================
+   KPI ROW
+   ============================================================ */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 20px 24px 0;
+}
+
+.kpi-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--teal);
+}
+
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--body);
+  margin-bottom: 6px;
+}
+
+.kpi-value.green { color: var(--green); }
+.kpi-value.amber { color: var(--amber); }
+.kpi-value.red   { color: var(--red);   }
+
+.kpi-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.kpi-trend {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.kpi-trend.up   { color: var(--red);   }
+.kpi-trend.down { color: var(--green); }
+.kpi-trend.flat { color: var(--muted); }
+
+/* ============================================================
+   MAIN PANEL
+   ============================================================ */
+.main-panel {
+  margin: 20px 24px 32px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+.tabs-nav {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  padding: 0 8px;
+  gap: 2px;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  flex-shrink: 0;
+  padding: 14px 18px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  position: relative;
+  top: 1px;
+}
+
+.tab-btn:hover { color: var(--body); }
+.tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); font-weight: 600; }
+
+.tab-content {
+  display: none;
+  padding: 24px;
+  animation: fadeIn 0.2s ease;
+}
+
+.tab-content.active { display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+.source-attribution {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 16px;
+}
+
+.source-attribution code {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  background: var(--bg);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-style: normal;
+}
+
+/* ============================================================
+   PILLS / BADGES
+   ============================================================ */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.pill-green   { background: var(--green-bg);  color: var(--green);  }
+.pill-amber   { background: var(--amber-bg);  color: var(--amber);  }
+.pill-red     { background: var(--red-bg);    color: var(--red);    }
+.pill-purple  { background: var(--purple-bg); color: var(--purple); }
+.pill-grey    { background: var(--grey-bg);   color: var(--grey);   }
+.pill-teal    { background: var(--teal-light); color: var(--teal);  }
+
+.pill-sev-critical { background: var(--severity-critical-bg); color: var(--severity-critical-text); }
+.pill-sev-high     { background: var(--severity-high-bg);     color: var(--severity-high-text);     }
+.pill-sev-medium   { background: var(--severity-medium-bg);   color: var(--severity-medium-text);   }
+.pill-sev-low      { background: var(--severity-low-bg);      color: var(--severity-low-text);      }
+
+/* ============================================================
+   TAB 1 — INTERFACE HEALTH
+   ============================================================ */
+.interface-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.interface-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s;
+  background: var(--white);
+  position: relative;
+}
+
+.interface-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--teal);
+  transform: translateY(-1px);
+}
+
+.interface-card.non-compliant { border-left: 4px solid var(--red); }
+.interface-card.warning       { border-left: 4px solid var(--amber); }
+.interface-card.passing       { border-left: 4px solid var(--green); }
+.interface-card.suspended     { border-left: 4px solid var(--purple); }
+
+.icard-name {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--body);
+  margin-bottom: 10px;
+  word-break: break-all;
+}
+
+.icard-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.icard-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.icard-meta-item strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 1px;
+}
+
+.icard-meta-item span {
+  color: var(--body);
+  font-weight: 500;
+}
+
+.icard-freshness {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.icard-freshness .freshness-value {
+  font-weight: 600;
+  color: var(--body);
+}
+
+.icard-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--teal);
+  margin-top: 10px;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.icard-link:hover { text-decoration: underline; }
+
+/* ============================================================
+   SLIDE-IN DETAIL PANEL
+   ============================================================ */
+.panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 42, 51, 0.4);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+
+.panel-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.side-panel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 480px;
+  background: var(--white);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+  z-index: 201;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.side-panel.open { transform: translateX(0); }
+
+.side-panel-header {
+  background: var(--primary-dark);
+  padding: 20px 24px;
+  flex-shrink: 0;
+}
+
+.side-panel-header h3 {
+  color: var(--white);
+  font-family: 'Courier New', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.side-panel-header p {
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+}
+
+.side-panel-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: var(--white);
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+  z-index: 1;
+}
+
+.side-panel-close:hover { background: rgba(255,255,255,0.25); }
+
+.side-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.panel-section {
+  margin-bottom: 24px;
+}
+
+.panel-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.panel-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.panel-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.panel-field span {
+  font-size: 13px;
+  color: var(--body);
+  word-break: break-word;
+}
+
+.panel-field span.mono {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.validation-run {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  margin-bottom: 6px;
+}
+
+.val-icon { font-size: 14px; }
+.val-time { flex: 1; font-size: 12px; color: var(--muted); }
+.val-result { font-size: 12px; font-weight: 600; }
+
+/* ============================================================
+   TAB 2 — VIOLATIONS
+   ============================================================ */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-bar-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+.filter-btn {
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filter-btn:hover { border-color: var(--teal); color: var(--teal); }
+.filter-btn.active { background: var(--teal); border-color: var(--teal); color: var(--white); }
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  position: sticky;
+  top: 0;
+}
+
+.data-table th:hover { color: var(--body); }
+
+.data-table th .sort-indicator {
+  display: inline-block;
+  margin-left: 4px;
+  opacity: 0.4;
+  font-size: 10px;
+}
+
+.data-table th.sorted-asc .sort-indicator,
+.data-table th.sorted-desc .sort-indicator { opacity: 1; color: var(--teal); }
+
+.data-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:nth-child(even) td { background: var(--bg); }
+.data-table tr:hover td { background: var(--teal-light); }
+.data-table tr.affected-row td { background: #FEF2F2 !important; }
+.data-table tr.affected-row:hover td { background: #FEE2E2 !important; }
+
+.mono-cell {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--body);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-sm:hover {
+  background: var(--teal-light);
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+.btn-sm.teal {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--white);
+}
+
+.btn-sm.teal:hover { background: #145c58; }
+
+/* ============================================================
+   TAB 3 — SLA & FRESHNESS
+   ============================================================ */
+.sla-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sla-row {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+}
+
+.sla-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sla-name {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--body);
+}
+
+.sla-stat-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sla-pct {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.sla-bar-container {
+  height: 8px;
+  background: var(--border);
+  border-radius: 100px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.sla-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  width: 0;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sla-bar-fill.fresh    { background: var(--green); }
+.sla-bar-fill.warning  { background: var(--amber); }
+.sla-bar-fill.critical { background: var(--red);   }
+.sla-bar-fill.unknown  { background: var(--grey);  }
+
+.sla-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ============================================================
+   TAB 5 — GOVERNANCE
+   ============================================================ */
+.signoff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.signoff-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.signoff-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.signoff-contract {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--body);
+}
+
+.signoff-version {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.signoff-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.signoff-meta-item label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.deadline-urgent { color: var(--red) !important; font-weight: 600; }
+
+.signoff-breaking {
+  font-size: 12px;
+  background: var(--severity-high-bg);
+  border-left: 3px solid var(--amber);
+  padding: 8px 10px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--body);
+  margin-top: 8px;
+}
+
+.signoff-breaking strong {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--amber);
+  margin-bottom: 3px;
+}
+
+/* ============================================================
+   TAB 6 — TRIAGE
+   ============================================================ */
+.triage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.triage-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  background: var(--white);
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: start;
+  transition: opacity 0.4s, transform 0.4s;
+}
+
+.triage-item.removing {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.triage-item.critical { border-left: 4px solid var(--red); }
+.triage-item.high     { border-left: 4px solid var(--amber); }
+.triage-item.medium   { border-left: 4px solid #D97706; }
+
+.triage-sev-col { padding-top: 2px; }
+
+.triage-body-col {}
+
+.triage-rule {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--body);
+  margin-bottom: 4px;
+}
+
+.triage-message {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.triage-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  align-items: center;
+}
+
+.triage-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.triage-channel {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  background: var(--teal-light);
+  color: var(--teal);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.triage-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 130px;
+}
+
+/* ============================================================
+   SECTION HEADERS
+   ============================================================ */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--body);
+}
+
+.section-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+
+.empty-state .empty-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.empty-state p {
+  font-size: 14px;
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ============================================================
+   TABLE WRAPPER
+   ============================================================ */
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.table-wrapper .data-table th:first-child { padding-left: 18px; }
+.table-wrapper .data-table td:first-child { padding-left: 18px; }
+
+/* ============================================================
+   VERSION SUMMARY TABLE
+   ============================================================ */
+.version-status-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <div class="header-brand-dot"></div>
+    <span class="header-brand-name">Contract Operations</span>
+  </div>
+
+  <div class="header-centre">
+    <div class="product-select-wrapper">
+      <span class="product-select-label">Product</span>
+      <select class="product-select" id="productSelect">
+        <option value="customer360">Customer360</option>
+        <option value="accountbalance">AccountBalance</option>
+        <option value="creditrisk">CreditRisk</option>
+      </select>
+      <span class="product-select-chevron">&#9660;</span>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <span class="refresh-time">Last refreshed: <strong id="lastRefreshedTime">07:03 UTC</strong></span>
+    <button class="btn-refresh" id="refreshBtn" onclick="handleRefresh()">
+      <span class="refresh-icon" id="refreshIcon">&#8635;</span>
+      Refresh
+    </button>
+    <span class="env-badge" id="envBadge">PRD</span>
+  </div>
+</header>
+
+<!-- KPI ROW -->
+<div class="kpi-row" id="kpiRow"></div>
+
+<!-- MAIN PANEL -->
+<div class="main-panel">
+  <nav class="tabs-nav" role="tablist">
+    <button class="tab-btn active" data-tab="tab-interfaces"   onclick="switchTab('tab-interfaces',   this)">Interface Health</button>
+    <button class="tab-btn"        data-tab="tab-violations"   onclick="switchTab('tab-violations',   this)">Violations</button>
+    <button class="tab-btn"        data-tab="tab-sla"          onclick="switchTab('tab-sla',          this)">SLA &amp; Freshness</button>
+    <button class="tab-btn"        data-tab="tab-consumers"    onclick="switchTab('tab-consumers',    this)">Consumers</button>
+    <button class="tab-btn"        data-tab="tab-governance"   onclick="switchTab('tab-governance',   this)">Governance</button>
+    <button class="tab-btn"        data-tab="tab-triage"       onclick="switchTab('tab-triage',       this)">Triage</button>
+  </nav>
+
+  <!-- TAB 1 — INTERFACE HEALTH -->
+  <div id="tab-interfaces" class="tab-content active">
+    <p class="source-attribution">Data source: <code id="src-interfaces"></code></p>
+    <div class="interface-grid" id="interfaceGrid"></div>
+  </div>
+
+  <!-- TAB 2 — VIOLATIONS -->
+  <div id="tab-violations" class="tab-content">
+    <p class="source-attribution">Data source: <code id="src-violations"></code></p>
+    <div class="filter-bar" id="violationFilters"></div>
+    <div class="table-wrapper">
+      <table class="data-table" id="violationsTable">
+        <thead>
+          <tr>
+            <th data-col="rule_severity" onclick="sortTable('violations','rule_severity',this)">Severity <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="interface_name" onclick="sortTable('violations','interface_name',this)">Interface <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="rule_name" onclick="sortTable('violations','rule_name',this)">Rule <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="rule_sub_type" onclick="sortTable('violations','rule_sub_type',this)">Rule Type <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="affected_consumer_count" onclick="sortTable('violations','affected_consumer_count',this)">Consumers Affected <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="detected_dts" onclick="sortTable('violations','detected_dts',this)">Detected <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="remediation_status" onclick="sortTable('violations','remediation_status',this)">Status <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="violationsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 3 — SLA & FRESHNESS -->
+  <div id="tab-sla" class="tab-content">
+    <p class="source-attribution">Data source: <code id="src-sla"></code></p>
+    <div class="sla-list" id="slaList"></div>
+  </div>
+
+  <!-- TAB 4 — CONSUMERS -->
+  <div id="tab-consumers" class="tab-content">
+    <p class="source-attribution">Data source: <code id="src-consumers"></code></p>
+    <div class="table-wrapper">
+      <table class="data-table" id="consumersTable">
+        <thead>
+          <tr>
+            <th data-col="consumer_name" onclick="sortTable('consumers','consumer_name',this)">Consumer <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="interface_name" onclick="sortTable('consumers','interface_name',this)">Interface <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="owner" onclick="sortTable('consumers','owner',this)">Owner <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="data_classification_access" onclick="sortTable('consumers','data_classification_access',this)">Classification <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="notification_channel" onclick="sortTable('consumers','notification_channel',this)">Notification Channel <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="version" onclick="sortTable('consumers','version',this)">Version <span class="sort-indicator">&#9650;&#9660;</span></th>
+            <th data-col="impact_status" onclick="sortTable('consumers','impact_status',this)">Impact Status <span class="sort-indicator">&#9650;&#9660;</span></th>
+          </tr>
+        </thead>
+        <tbody id="consumersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 5 — GOVERNANCE -->
+  <div id="tab-governance" class="tab-content">
+    <p class="source-attribution">Data source: <code id="src-governance"></code></p>
+
+    <div class="section-header">
+      <div>
+        <div class="section-title">Pending Sign-off</div>
+        <div class="section-sub">Version changes requiring consumer acknowledgement</div>
+      </div>
+    </div>
+    <div class="signoff-grid" id="signoffGrid"></div>
+
+    <hr class="divider">
+
+    <div class="section-header">
+      <div>
+        <div class="section-title">Version Status Summary</div>
+        <div class="section-sub">All contract versions for the selected product</div>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table" id="versionTable">
+        <thead>
+          <tr>
+            <th>Interface</th>
+            <th>Version</th>
+            <th>Publication Status</th>
+            <th>Gate Mode</th>
+            <th>Owner</th>
+          </tr>
+        </thead>
+        <tbody id="versionBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 6 — TRIAGE -->
+  <div id="tab-triage" class="tab-content">
+    <p class="source-attribution">Data source: <code id="src-triage"></code></p>
+    <div class="section-header">
+      <div>
+        <div class="section-title">Open Violations — Triage Queue</div>
+        <div class="section-sub">Priority-ordered for on-call incident response. CRITICAL first.</div>
+      </div>
+    </div>
+    <div class="triage-list" id="triageList"></div>
+  </div>
+</div>
+
+<!-- SIDE PANEL OVERLAY -->
+<div class="panel-overlay" id="panelOverlay" onclick="closeSidePanel()"></div>
+<div class="side-panel" id="sidePanel">
+  <div class="side-panel-header">
+    <button class="side-panel-close" onclick="closeSidePanel()" title="Close">&#10005;</button>
+    <h3 id="panelTitle">Interface Detail</h3>
+    <p id="panelSubtitle">Loading...</p>
+  </div>
+  <div class="side-panel-body" id="panelBody"></div>
+</div>
+
+<!-- ============================================================
+     DATA LAYER
+     ============================================================ -->
+<script>
+// ---- PRODUCTS -------------------------------------------------
+const PRODUCTS = [
+  { id: 'customer360',    name: 'Customer360',     owner: 'Customer Data Domain',  env: 'PRD' },
+  { id: 'accountbalance', name: 'AccountBalance',  owner: 'Finance Data Domain',   env: 'PRD' },
+  { id: 'creditrisk',     name: 'CreditRisk',      owner: 'Risk Analytics Domain', env: 'PRD' },
+];
+
+// ---- INTERFACES -----------------------------------------------
+const INTERFACES = {
+  customer360: [
+    { interface_name: 'customer_current',             interface_type: 'VIEW', version: '2.1.0',
+      publication_status: 'PUBLISHED',     validation_status: 'PASSING',  is_compliant: 1,
+      publication_gate_mode: 'BLOCKING',   freshness_sla_minutes: 960,
+      last_validated_dts: '2026-05-11T05:00:12Z', owner: 'Emma Walsh' },
+    { interface_name: 'customer_marketing_eligible',  interface_type: 'VIEW', version: '1.3.0',
+      publication_status: 'PUBLISHED',     validation_status: 'WARNING',  is_compliant: 1,
+      publication_gate_mode: 'BLOCKING',   freshness_sla_minutes: 1440,
+      last_validated_dts: '2026-05-11T04:58:33Z', owner: 'Emma Walsh' },
+    { interface_name: 'customer_risk_features',       interface_type: 'VIEW', version: '3.0.1',
+      publication_status: 'NON_COMPLIANT', validation_status: 'FAILING',  is_compliant: 0,
+      publication_gate_mode: 'BLOCKING',   freshness_sla_minutes: 480,
+      last_validated_dts: '2026-05-11T05:02:44Z', owner: 'Liam Chen' },
+  ],
+  accountbalance: [
+    { interface_name: 'account_balance_current',             interface_type: 'VIEW', version: '4.2.0',
+      publication_status: 'PUBLISHED',     validation_status: 'PASSING',  is_compliant: 1,
+      publication_gate_mode: 'BLOCKING',   freshness_sla_minutes: 15,
+      last_validated_dts: '2026-05-11T06:58:01Z', owner: 'Sarah Okonkwo' },
+    { interface_name: 'account_balance_regulatory_eod',      interface_type: 'VIEW', version: '2.0.0',
+      publication_status: 'PUBLISHED',     validation_status: 'WARNING',  is_compliant: 1,
+      publication_gate_mode: 'BLOCKING',   freshness_sla_minutes: 60,
+      last_validated_dts: '2026-05-11T00:31:14Z', owner: 'Sarah Okonkwo' },
+    { interface_name: 'account_balance_fraud_near_real_time',interface_type: 'VIEW', version: '1.1.0',
+      publication_status: 'NON_COMPLIANT', validation_status: 'FAILING',  is_compliant: 0,
+      publication_gate_mode: 'BLOCKING',   freshness_sla_minutes: 5,
+      last_validated_dts: '2026-05-11T06:47:22Z', owner: 'James Oduya' },
+    { interface_name: 'account_balance_marketing_eligible',  interface_type: 'VIEW', version: '1.0.0',
+      publication_status: 'PUBLISHED',     validation_status: 'PASSING',  is_compliant: 1,
+      publication_gate_mode: 'ADVISORY',   freshness_sla_minutes: 1440,
+      last_validated_dts: '2026-05-11T03:15:44Z', owner: 'Sarah Okonkwo' },
+  ],
+  creditrisk: [
+    { interface_name: 'credit_risk_score',            interface_type: 'VIEW', version: '5.1.0',
+      publication_status: 'PUBLISHED',     validation_status: 'PASSING',  is_compliant: 1,
+      publication_gate_mode: 'BLOCKING',   freshness_sla_minutes: 240,
+      last_validated_dts: '2026-05-11T06:00:33Z', owner: 'Priya Sharma' },
+    { interface_name: 'application_score_features',   interface_type: 'VIEW', version: '2.4.0',
+      publication_status: 'PUBLISHED',     validation_status: 'WARNING',  is_compliant: 1,
+      publication_gate_mode: 'BLOCKING',   freshness_sla_minutes: 480,
+      last_validated_dts: '2026-05-11T02:12:55Z', owner: 'Priya Sharma' },
+    { interface_name: 'credit_risk_deidentified',     interface_type: 'VIEW', version: '1.0.0',
+      publication_status: 'SUSPENDED',     validation_status: 'UNKNOWN',  is_compliant: 0,
+      publication_gate_mode: 'BLOCKING',   freshness_sla_minutes: 1440,
+      last_validated_dts: null, owner: 'Priya Sharma' },
+  ],
+};
+
+// ---- VIOLATIONS -----------------------------------------------
+const VIOLATIONS_ALL = [
+  { violation_id: 'V-1001', product: 'accountbalance',
+    interface_name: 'account_balance_fraud_near_real_time',
+    violation_type: 'CONTRACT_VALIDATION_FAILED', rule_name: 'fraud_balance_null_rate_account_id',
+    rule_severity: 'CRITICAL', rule_sub_type: 'NULL_RATE_MAX',
+    violation_message: 'NULL rate on account_id measured at 3.2% — threshold is 0.0%',
+    affected_consumer_count: 2, detected_dts: '2026-05-11T06:47:22Z',
+    remediation_status: 'OPEN', remediation_owner: null },
+  { violation_id: 'V-1002', product: 'accountbalance',
+    interface_name: 'account_balance_regulatory_eod',
+    violation_type: 'CONTRACT_SLA_BREACH', rule_name: 'reg_eod_freshness_sla',
+    rule_severity: 'HIGH', rule_sub_type: 'FRESHNESS_MAX_AGE',
+    violation_message: 'Last refresh was 397 minutes ago — SLA is 60 minutes',
+    affected_consumer_count: 1, detected_dts: '2026-05-11T01:31:14Z',
+    remediation_status: 'IN_PROGRESS', remediation_owner: 'Sarah Okonkwo' },
+  { violation_id: 'V-1003', product: 'customer360',
+    interface_name: 'customer_risk_features',
+    violation_type: 'CONTRACT_VALIDATION_FAILED', rule_name: 'risk_features_row_count_min',
+    rule_severity: 'HIGH', rule_sub_type: 'ROW_COUNT_MIN',
+    violation_message: 'Row count 812,441 is below minimum threshold of 1,000,000',
+    affected_consumer_count: 1, detected_dts: '2026-05-11T05:02:44Z',
+    remediation_status: 'OPEN', remediation_owner: null },
+  { violation_id: 'V-1004', product: 'creditrisk',
+    interface_name: 'application_score_features',
+    violation_type: 'CONTRACT_SLA_BREACH', rule_name: 'score_features_freshness',
+    rule_severity: 'MEDIUM', rule_sub_type: 'FRESHNESS_MAX_AGE',
+    violation_message: 'Last refresh was 534 minutes ago — SLA is 480 minutes',
+    affected_consumer_count: 1, detected_dts: '2026-05-11T02:12:55Z',
+    remediation_status: 'OPEN', remediation_owner: null },
+];
+
+// ---- CONSUMERS ------------------------------------------------
+const CONSUMERS_ALL = {
+  accountbalance: [
+    { consumer_name: 'Fraud Detection Engine', owner: 'James Oduya', version: '1.1.0',
+      interface_name: 'account_balance_fraud_near_real_time',
+      consumer_purpose: 'Real-time transaction fraud scoring',
+      data_classification_access: 'CONFIDENTIAL',
+      notification_channel: '#fraud-ops-alerts', registration_status: 'ACTIVE', impact_status: 'AFFECTED' },
+    { consumer_name: 'Digital Banking Channel', owner: 'Alex Torres', version: '4.2.0',
+      interface_name: 'account_balance_current',
+      consumer_purpose: 'Customer balance display in app and internet banking',
+      data_classification_access: 'CONFIDENTIAL',
+      notification_channel: '#digital-data-ops', registration_status: 'ACTIVE', impact_status: 'OK' },
+    { consumer_name: 'APRA Regulatory Reporting', owner: 'Finance Regulatory Team', version: '2.0.0',
+      interface_name: 'account_balance_regulatory_eod',
+      consumer_purpose: 'APS 330 and ADI daily liquidity reporting',
+      data_classification_access: 'RESTRICTED',
+      notification_channel: 'regulatory-reporting@bank.com', registration_status: 'ACTIVE', impact_status: 'DEGRADED' },
+    { consumer_name: 'AML Transaction Monitor', owner: 'James Oduya', version: '1.1.0',
+      interface_name: 'account_balance_fraud_near_real_time',
+      consumer_purpose: 'Anti-money laundering transaction pattern analysis',
+      data_classification_access: 'CONFIDENTIAL',
+      notification_channel: '#aml-ops', registration_status: 'ACTIVE', impact_status: 'AFFECTED' },
+  ],
+  customer360: [
+    { consumer_name: 'AML Customer Risk', owner: 'Risk Analytics', version: '3.0.1',
+      interface_name: 'customer_risk_features',
+      consumer_purpose: 'Customer risk profile for AML overnight screening',
+      data_classification_access: 'CONFIDENTIAL',
+      notification_channel: '#aml-ops', registration_status: 'ACTIVE', impact_status: 'AFFECTED' },
+    { consumer_name: 'Marketing Campaign Engine', owner: 'Marketing Analytics', version: '1.3.0',
+      interface_name: 'customer_marketing_eligible',
+      consumer_purpose: 'Consent-filtered customer list for campaign targeting',
+      data_classification_access: 'INTERNAL',
+      notification_channel: '#marketing-data', registration_status: 'ACTIVE', impact_status: 'OK' },
+    { consumer_name: 'Branch Banker Dashboard', owner: 'Retail Banking', version: '2.1.0',
+      interface_name: 'customer_current',
+      consumer_purpose: 'Customer summary view for branch staff',
+      data_classification_access: 'CONFIDENTIAL',
+      notification_channel: '#retail-data-ops', registration_status: 'ACTIVE', impact_status: 'OK' },
+  ],
+  creditrisk: [
+    { consumer_name: 'Credit Decisioning Model', owner: 'Priya Sharma', version: '2.4.0',
+      interface_name: 'application_score_features',
+      consumer_purpose: 'Application-level feature inputs for credit scoring model',
+      data_classification_access: 'CONFIDENTIAL',
+      notification_channel: '#credit-risk-ops', registration_status: 'ACTIVE', impact_status: 'DEGRADED' },
+    { consumer_name: 'Originations Platform', owner: 'Retail Lending', version: '5.1.0',
+      interface_name: 'credit_risk_score',
+      consumer_purpose: 'Real-time credit risk score for loan application decisioning',
+      data_classification_access: 'CONFIDENTIAL',
+      notification_channel: '#originations-ops', registration_status: 'ACTIVE', impact_status: 'OK' },
+  ],
+};
+
+// ---- GOVERNANCE / SIGN-OFF ------------------------------------
+const SIGNOFFS_ALL = {
+  accountbalance: [
+    { contract_key: 'account_balance_current_v5', version_number: '5.0.0',
+      consumer_name: 'Digital Banking Channel', consumer_owner: 'Alex Torres',
+      signoff_status: 'PENDING', requested_dts: '2026-05-09T09:00:00Z',
+      deadline_dt: '2026-05-16', signoff_dts: null,
+      signoff_notes: 'Breaking: available_balance_amt renamed to available_balance' },
+    { contract_key: 'account_balance_current_v5', version_number: '5.0.0',
+      consumer_name: 'APRA Regulatory Reporting', consumer_owner: 'Finance Regulatory Team',
+      signoff_status: 'APPROVED', requested_dts: '2026-05-09T09:00:00Z',
+      deadline_dt: '2026-05-16', signoff_dts: '2026-05-10T14:22:00Z',
+      signoff_notes: 'Confirmed migration to new column name by 16 May' },
+  ],
+  customer360: [],
+  creditrisk: [],
+};
+
+// ---- SIMULATED VALIDATION RUNS (for side panel) ---------------
+const VALIDATION_RUNS = {
+  customer_current: [
+    { ts: '2026-05-11T05:00:12Z', result: 'PASSING',  label: 'All 12 rules passed' },
+    { ts: '2026-05-11T04:00:09Z', result: 'PASSING',  label: 'All 12 rules passed' },
+    { ts: '2026-05-11T03:00:14Z', result: 'PASSING',  label: 'All 12 rules passed' },
+  ],
+  customer_marketing_eligible: [
+    { ts: '2026-05-11T04:58:33Z', result: 'WARNING',  label: '1 of 8 rules at warning threshold' },
+    { ts: '2026-05-11T03:58:41Z', result: 'PASSING',  label: 'All 8 rules passed' },
+    { ts: '2026-05-11T02:58:29Z', result: 'PASSING',  label: 'All 8 rules passed' },
+  ],
+  customer_risk_features: [
+    { ts: '2026-05-11T05:02:44Z', result: 'FAILING',  label: 'Row count below minimum threshold' },
+    { ts: '2026-05-11T04:02:51Z', result: 'FAILING',  label: 'Row count below minimum threshold' },
+    { ts: '2026-05-11T03:02:38Z', result: 'PASSING',  label: 'All 15 rules passed' },
+  ],
+  account_balance_current: [
+    { ts: '2026-05-11T06:58:01Z', result: 'PASSING',  label: 'All 22 rules passed' },
+    { ts: '2026-05-11T06:43:07Z', result: 'PASSING',  label: 'All 22 rules passed' },
+    { ts: '2026-05-11T06:28:02Z', result: 'PASSING',  label: 'All 22 rules passed' },
+  ],
+  account_balance_regulatory_eod: [
+    { ts: '2026-05-11T00:31:14Z', result: 'WARNING',  label: 'Freshness SLA approaching breach' },
+    { ts: '2026-05-10T23:31:22Z', result: 'PASSING',  label: 'All 18 rules passed' },
+    { ts: '2026-05-10T22:31:18Z', result: 'PASSING',  label: 'All 18 rules passed' },
+  ],
+  account_balance_fraud_near_real_time: [
+    { ts: '2026-05-11T06:47:22Z', result: 'FAILING',  label: 'NULL rate violation on account_id' },
+    { ts: '2026-05-11T06:32:19Z', result: 'FAILING',  label: 'NULL rate violation on account_id' },
+    { ts: '2026-05-11T06:17:24Z', result: 'PASSING',  label: 'All 9 rules passed' },
+  ],
+  account_balance_marketing_eligible: [
+    { ts: '2026-05-11T03:15:44Z', result: 'PASSING',  label: 'All 6 rules passed' },
+    { ts: '2026-05-11T02:15:51Z', result: 'PASSING',  label: 'All 6 rules passed' },
+    { ts: '2026-05-11T01:15:48Z', result: 'PASSING',  label: 'All 6 rules passed' },
+  ],
+  credit_risk_score: [
+    { ts: '2026-05-11T06:00:33Z', result: 'PASSING',  label: 'All 31 rules passed' },
+    { ts: '2026-05-11T02:00:41Z', result: 'PASSING',  label: 'All 31 rules passed' },
+    { ts: '2026-05-10T22:00:29Z', result: 'PASSING',  label: 'All 31 rules passed' },
+  ],
+  application_score_features: [
+    { ts: '2026-05-11T02:12:55Z', result: 'WARNING',  label: 'Freshness SLA breach — 534 min vs 480 min SLA' },
+    { ts: '2026-05-10T18:12:44Z', result: 'PASSING',  label: 'All 24 rules passed' },
+    { ts: '2026-05-10T10:12:51Z', result: 'PASSING',  label: 'All 24 rules passed' },
+  ],
+  credit_risk_deidentified: [
+    { ts: null, result: 'UNKNOWN',  label: 'Interface suspended — no validation runs' },
+  ],
+};
+
+// ---- TRIAGE STATE (mutable) -----------------------------------
+let triageState = {};
+</script>
+
+<!-- ============================================================
+     UTILITY LAYER
+     ============================================================ -->
+<script>
+// ---- DATE / TIME HELPERS --------------------------------------
+
+const REF_DTS = new Date('2026-05-11T07:03:00Z');
+
+function minutesSince(dtString) {
+  if (!dtString) return null;
+  const dt = new Date(dtString);
+  return Math.floor((REF_DTS - dt) / 60000);
+}
+
+function formatAgo(dtString) {
+  if (!dtString) return 'Never';
+  const mins = minutesSince(dtString);
+  if (mins < 60) return `${mins}m ago`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}m ago` : `${h}h ago`;
+}
+
+function formatTs(dtString) {
+  if (!dtString) return '—';
+  const d = new Date(dtString);
+  return d.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
+}
+
+function daysUntil(dateString) {
+  const target = new Date(dateString + 'T00:00:00Z');
+  return Math.ceil((target - REF_DTS) / 86400000);
+}
+
+// ---- STATUS PILL HELPERS --------------------------------------
+
+function pubStatusPill(status) {
+  const map = {
+    PUBLISHED:     { cls: 'pill-green',  label: 'PUBLISHED' },
+    NON_COMPLIANT: { cls: 'pill-red',    label: 'NON_COMPLIANT' },
+    SUSPENDED:     { cls: 'pill-purple', label: 'SUSPENDED' },
+    DRAFT:         { cls: 'pill-grey',   label: 'DRAFT' },
+  };
+  const s = map[status] || { cls: 'pill-grey', label: status };
+  return `<span class="pill ${s.cls}">${s.label}</span>`;
+}
+
+function valStatusPill(status) {
+  const map = {
+    PASSING: { cls: 'pill-green',  label: '&#10003; PASSING' },
+    WARNING: { cls: 'pill-amber',  label: '&#9651; WARNING' },
+    FAILING: { cls: 'pill-red',    label: '&#10005; FAILING' },
+    UNKNOWN: { cls: 'pill-grey',   label: '&#9679; UNKNOWN' },
+  };
+  const s = map[status] || { cls: 'pill-grey', label: status };
+  return `<span class="pill ${s.cls}">${s.label}</span>`;
+}
+
+function gateModePill(mode) {
+  if (mode === 'BLOCKING') return `<span class="pill pill-teal" style="font-size:10px">&#9632; BLOCKING</span>`;
+  return `<span class="pill pill-grey" style="font-size:10px">&#9633; ADVISORY</span>`;
+}
+
+function severityPill(sev) {
+  const map = {
+    CRITICAL: 'pill-sev-critical',
+    HIGH:     'pill-sev-high',
+    MEDIUM:   'pill-sev-medium',
+    LOW:      'pill-sev-low',
+  };
+  return `<span class="pill ${map[sev] || 'pill-grey'}">${sev}</span>`;
+}
+
+function remStatusPill(status) {
+  const map = {
+    OPEN:        { cls: 'pill-red',    label: 'OPEN' },
+    IN_PROGRESS: { cls: 'pill-amber',  label: 'IN PROGRESS' },
+    RESOLVED:    { cls: 'pill-green',  label: 'RESOLVED' },
+  };
+  const s = map[status] || { cls: 'pill-grey', label: status };
+  return `<span class="pill ${s.cls}" id="rem-${arguments[1] || ''}">${s.label}</span>`;
+}
+
+function impactPill(status) {
+  const map = {
+    OK:       { cls: 'pill-green',  label: '&#9679; OK' },
+    DEGRADED: { cls: 'pill-amber',  label: '&#9651; DEGRADED' },
+    AFFECTED: { cls: 'pill-red',    label: '&#9679; AFFECTED' },
+  };
+  const s = map[status] || { cls: 'pill-grey', label: status };
+  return `<span class="pill ${s.cls}">${s.label}</span>`;
+}
+
+function signoffStatusPill(status) {
+  const map = {
+    PENDING:  { cls: 'pill-amber', label: 'PENDING' },
+    APPROVED: { cls: 'pill-green', label: 'APPROVED' },
+    REJECTED: { cls: 'pill-red',   label: 'REJECTED' },
+  };
+  const s = map[status] || { cls: 'pill-grey', label: status };
+  return `<span class="pill ${s.cls}">${s.label}</span>`;
+}
+
+// ---- SLA HELPERS ----------------------------------------------
+
+function slaStatus(iface) {
+  if (!iface.last_validated_dts) return { pct: 0, cls: 'unknown', label: 'UNKNOWN', pctLabel: 'N/A' };
+  const elapsed = minutesSince(iface.last_validated_dts);
+  const sla = iface.freshness_sla_minutes;
+  const pct = Math.min((elapsed / sla) * 100, 150);
+  let cls, label;
+  if (elapsed > sla) {
+    cls = 'critical'; label = 'CRITICAL';
+  } else if (elapsed > sla * 0.8) {
+    cls = 'warning'; label = 'STALE';
+  } else {
+    cls = 'fresh'; label = 'FRESH';
+  }
+  const rawPct = Math.round((elapsed / sla) * 100);
+  return { pct, cls, label, pctLabel: `${rawPct}%`, elapsed, sla };
+}
+
+// ---- CARD BORDER CLASS ----------------------------------------
+
+function cardBorderClass(iface) {
+  if (iface.publication_status === 'SUSPENDED') return 'suspended';
+  if (iface.publication_status === 'NON_COMPLIANT') return 'non-compliant';
+  if (iface.validation_status === 'WARNING') return 'warning';
+  return 'passing';
+}
+
+// ---- PRODUCT DISPLAY NAME -------------------------------------
+
+function productDisplayName(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  return p ? p.name : id;
+}
+</script>
+
+<!-- ============================================================
+     RENDER LAYER
+     ============================================================ -->
+<script>
+let currentProduct = 'customer360';
+let sortStates = { violations: {}, consumers: {} };
+let activeViolationFilter = 'ALL';
+
+// ---- MAIN RENDER ENTRY ----------------------------------------
+
+function renderAll(productId) {
+  currentProduct = productId;
+  const p = PRODUCTS.find(x => x.id === productId);
+  if (p) document.getElementById('envBadge').textContent = p.env;
+
+  renderKPIs(productId);
+  renderInterfaces(productId);
+  renderViolations(productId);
+  renderSLA(productId);
+  renderConsumers(productId);
+  renderGovernance(productId);
+  renderTriage(productId);
+  updateSources(productId);
+}
+
+// ---- SOURCE ATTRIBUTIONS --------------------------------------
+
+function updateSources(productId) {
+  const pname = productDisplayName(productId);
+  const srcs = {
+    'src-interfaces':  `${pname}_Semantic_V.contract_current_interface`,
+    'src-violations':  `${pname}_Observability_V.contract_violation_summary`,
+    'src-sla':         `${pname}_Observability_V.contract_sla_status`,
+    'src-consumers':   `${pname}_Observability_V.contract_registered_consumer / contract_consumer_impact`,
+    'src-governance':  `${pname}_Memory_V.contract_signoff_status`,
+    'src-triage':      `${pname}_Observability_V.contract_violation_summary`,
+  };
+  Object.entries(srcs).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  });
+}
+
+// ---- KPI ROW --------------------------------------------------
+
+function renderKPIs(productId) {
+  const ifaces    = INTERFACES[productId] || [];
+  const violations = VIOLATIONS_ALL.filter(v => v.product === productId);
+  const consumers = CONSUMERS_ALL[productId] || [];
+
+  const total     = ifaces.length;
+  const compliant = ifaces.filter(i => i.is_compliant === 1).length;
+  const pct       = total > 0 ? Math.round((compliant / total) * 100) : 0;
+
+  const openVios  = violations.filter(v => v.remediation_status !== 'RESOLVED');
+  const hasCrit   = openVios.some(v => v.rule_severity === 'CRITICAL');
+  const hasHigh   = openVios.some(v => v.rule_severity === 'HIGH');
+  const vioColour = hasCrit ? 'red' : hasHigh ? 'amber' : openVios.length > 0 ? 'amber' : 'green';
+
+  const affectedCount = consumers.filter(c => c.impact_status === 'AFFECTED' || c.impact_status === 'DEGRADED').length;
+
+  const compColour = pct === 100 ? 'green' : pct >= 70 ? 'amber' : 'red';
+
+  const kpis = [
+    {
+      label: 'Interfaces',
+      value: total,
+      valueClass: '',
+      sub: `${compliant} compliant of ${total}`,
+      trend: '&#9650; 0 since yesterday',
+      trendClass: 'flat',
+    },
+    {
+      label: 'Compliance',
+      value: pct + '%',
+      valueClass: compColour,
+      sub: `${compliant} of ${total} interfaces passing`,
+      trend: pct === 100 ? '&#9654; Stable' : '&#9660; 1 degraded since yesterday',
+      trendClass: pct === 100 ? 'flat' : 'up',
+    },
+    {
+      label: 'Open Violations',
+      value: openVios.length,
+      valueClass: vioColour,
+      sub: hasCrit ? 'CRITICAL severity present' : hasHigh ? 'HIGH severity present' : openVios.length > 0 ? 'No critical violations' : 'All clear',
+      trend: openVios.length > 0 ? '&#9650; ' + openVios.length + ' open' : '&#9654; None open',
+      trendClass: openVios.length > 0 ? 'up' : 'flat',
+    },
+    {
+      label: 'Consumers Affected',
+      value: affectedCount,
+      valueClass: affectedCount > 0 ? 'red' : 'green',
+      sub: consumers.length + ' total registered consumers',
+      trend: affectedCount > 0 ? '&#9650; ' + affectedCount + ' impacted' : '&#9654; None impacted',
+      trendClass: affectedCount > 0 ? 'up' : 'flat',
+    },
+  ];
+
+  const container = document.getElementById('kpiRow');
+  container.innerHTML = kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value ${k.valueClass}">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+      <div class="kpi-trend ${k.trendClass}">${k.trend}</div>
+    </div>
+  `).join('');
+}
+
+// ---- INTERFACES TAB -------------------------------------------
+
+function renderInterfaces(productId) {
+  const ifaces = INTERFACES[productId] || [];
+  const grid   = document.getElementById('interfaceGrid');
+
+  if (ifaces.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9679;</div><p>No interfaces found for this product.</p></div>';
+    return;
+  }
+
+  grid.innerHTML = ifaces.map(iface => {
+    const borderCls  = cardBorderClass(iface);
+    const agoText    = iface.last_validated_dts ? formatAgo(iface.last_validated_dts) : 'Never validated';
+    const sla        = slaStatus(iface);
+    const freshnessColour = sla.cls === 'fresh' ? 'var(--green)' : sla.cls === 'critical' ? 'var(--red)' : 'var(--amber)';
+
+    return `
+      <div class="interface-card ${borderCls}" onclick="openSidePanel('${iface.interface_name}', '${productId}')">
+        <div class="icard-name">${iface.interface_name}</div>
+        <div class="icard-badges">
+          ${pubStatusPill(iface.publication_status)}
+          ${valStatusPill(iface.validation_status)}
+          ${gateModePill(iface.publication_gate_mode)}
+        </div>
+        <div class="icard-meta">
+          <div class="icard-meta-item">
+            <strong>Version</strong>
+            <span>${iface.version}</span>
+          </div>
+          <div class="icard-meta-item">
+            <strong>Owner</strong>
+            <span>${iface.owner}</span>
+          </div>
+          <div class="icard-meta-item">
+            <strong>SLA</strong>
+            <span>${iface.freshness_sla_minutes >= 60
+              ? Math.floor(iface.freshness_sla_minutes / 60) + 'h'
+              : iface.freshness_sla_minutes + 'm'}</span>
+          </div>
+          <div class="icard-meta-item">
+            <strong>Type</strong>
+            <span>${iface.interface_type}</span>
+          </div>
+        </div>
+        <div class="icard-freshness">
+          Validated: <span class="freshness-value" style="color:${freshnessColour}">${agoText}</span>
+        </div>
+        <button class="icard-link">View detail &#8594;</button>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---- VIOLATIONS TAB -------------------------------------------
+
+function renderViolations(productId, filter) {
+  filter = filter || activeViolationFilter;
+  activeViolationFilter = filter;
+
+  const allVios = VIOLATIONS_ALL.filter(v => v.product === productId);
+
+  // Render filter bar
+  const filterBar = document.getElementById('violationFilters');
+  const severities = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+  filterBar.innerHTML = '<span class="filter-bar-label">Severity:</span>' +
+    severities.map(s => `
+      <button class="filter-btn ${filter === s ? 'active' : ''}"
+              onclick="renderViolations('${productId}', '${s}')">${s === 'ALL' ? 'All Severities' : s}</button>
+    `).join('');
+
+  const filtered = filter === 'ALL' ? allVios : allVios.filter(v => v.rule_severity === filter);
+
+  const sorted = applySortState(filtered, 'violations', 'detected_dts', 'desc');
+
+  const tbody = document.getElementById('violationsBody');
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">
+      &#10003; No violations match the selected filter.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = sorted.map(v => `
+    <tr data-vid="${v.violation_id}">
+      <td>${severityPill(v.rule_severity)}</td>
+      <td class="mono-cell">${v.interface_name}</td>
+      <td class="mono-cell">${v.rule_name}</td>
+      <td><span class="pill pill-grey" style="font-size:10px;font-family:'Courier New',monospace">${v.rule_sub_type}</span></td>
+      <td style="text-align:center">&#9786; ${v.affected_consumer_count}</td>
+      <td style="white-space:nowrap">${formatTs(v.detected_dts)}</td>
+      <td id="vio-status-${v.violation_id}">${remStatusPill(v.remediation_status, v.violation_id)}</td>
+      <td><button class="btn-sm" onclick="assignViolation('${v.violation_id}')">Assign &#8594;</button></td>
+    </tr>
+  `).join('');
+}
+
+// ---- SLA TAB --------------------------------------------------
+
+function renderSLA(productId) {
+  const ifaces = INTERFACES[productId] || [];
+  const list   = document.getElementById('slaList');
+
+  list.innerHTML = ifaces.map(iface => {
+    const sla = slaStatus(iface);
+    const elapsed = iface.last_validated_dts ? minutesSince(iface.last_validated_dts) : null;
+    const elapsedLabel = elapsed !== null ? `${elapsed} min ago` : 'No data';
+    const slaLabel     = `SLA: ${iface.freshness_sla_minutes} min`;
+
+    const statusPillMap = {
+      fresh:   { cls: 'pill-green',  label: 'FRESH' },
+      warning: { cls: 'pill-amber',  label: 'STALE' },
+      critical:{ cls: 'pill-red',    label: 'CRITICAL' },
+      unknown: { cls: 'pill-grey',   label: 'UNKNOWN' },
+    };
+    const sp = statusPillMap[sla.cls] || statusPillMap.unknown;
+    const pctColour = sla.cls === 'fresh' ? 'var(--green)' : sla.cls === 'critical' ? 'var(--red)' : 'var(--amber)';
+    const displayPct = sla.cls === 'unknown' ? 'N/A' : `${sla.pctLabel} — ${sp.label}`;
+
+    return `
+      <div class="sla-row">
+        <div class="sla-row-header">
+          <span class="sla-name">${iface.interface_name}</span>
+          <div class="sla-stat-right">
+            <span class="sla-pct" style="color:${pctColour}">${displayPct}</span>
+            <span class="pill ${sp.cls}">${sp.label}</span>
+          </div>
+        </div>
+        <div class="sla-bar-container">
+          <div class="sla-bar-fill ${sla.cls}" data-fill="${Math.min(sla.pct, 100)}" style="width:0"></div>
+        </div>
+        <div class="sla-labels">
+          <span>${elapsedLabel}</span>
+          <span>${slaLabel}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Trigger bar animations after a brief tick
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      list.querySelectorAll('.sla-bar-fill').forEach(bar => {
+        bar.style.width = bar.dataset.fill + '%';
+      });
+    });
+  });
+}
+
+// ---- CONSUMERS TAB -------------------------------------------
+
+function renderConsumers(productId) {
+  const consumers = CONSUMERS_ALL[productId] || [];
+  const sorted    = applySortState(consumers, 'consumers', 'impact_status', 'asc');
+  const tbody     = document.getElementById('consumersBody');
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">
+      No consumers registered for this product.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = sorted.map(c => {
+    const isAffected = c.impact_status === 'AFFECTED';
+    const rowCls     = isAffected ? 'affected-row' : '';
+    return `
+      <tr class="${rowCls}">
+        <td>
+          <strong>${c.consumer_name}</strong>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.consumer_purpose}</div>
+        </td>
+        <td class="mono-cell">${c.interface_name}</td>
+        <td>${c.owner}</td>
+        <td>${classificationPill(c.data_classification_access)}</td>
+        <td class="mono-cell" style="font-size:12px">${c.notification_channel}</td>
+        <td><span style="font-family:'Courier New',monospace;font-size:12px">v${c.version}</span></td>
+        <td>${impactPill(c.impact_status)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function classificationPill(cls) {
+  const map = {
+    RESTRICTED:    { bg: '#FEE2E2', color: '#DC2626' },
+    CONFIDENTIAL:  { bg: '#FEF3C7', color: '#D97706' },
+    INTERNAL:      { bg: '#EFF6FF', color: '#2563EB' },
+    PUBLIC:        { bg: '#F0FDF4', color: '#059669' },
+  };
+  const s = map[cls] || { bg: 'var(--grey-bg)', color: 'var(--grey)' };
+  return `<span class="pill" style="background:${s.bg};color:${s.color}">${cls}</span>`;
+}
+
+// ---- GOVERNANCE TAB ------------------------------------------
+
+function renderGovernance(productId) {
+  const signoffs = SIGNOFFS_ALL[productId] || [];
+  const ifaces   = INTERFACES[productId] || [];
+
+  // Sign-off cards
+  const grid = document.getElementById('signoffGrid');
+  if (signoffs.length === 0) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">&#10003;</div>
+      <p>No pending sign-offs for this product.</p></div>`;
+  } else {
+    grid.innerHTML = signoffs.map(s => {
+      const days    = daysUntil(s.deadline_dt);
+      const daysCls = days < 3 ? 'deadline-urgent' : '';
+      const daysLabel = days === 1 ? '1 day remaining' : days + ' days remaining';
+
+      return `
+        <div class="signoff-card">
+          <div class="signoff-card-header">
+            <div>
+              <div class="signoff-contract">${s.contract_key}</div>
+              <div class="signoff-version">v${s.version_number}</div>
+            </div>
+            ${signoffStatusPill(s.signoff_status)}
+          </div>
+          <div class="signoff-meta">
+            <div class="signoff-meta-item">
+              <label>Consumer</label>
+              <span>${s.consumer_name}</span>
+            </div>
+            <div class="signoff-meta-item">
+              <label>Owner</label>
+              <span>${s.consumer_owner}</span>
+            </div>
+            <div class="signoff-meta-item">
+              <label>Requested</label>
+              <span>${formatTs(s.requested_dts).replace(' UTC', '')}</span>
+            </div>
+            <div class="signoff-meta-item">
+              <label>Deadline</label>
+              <span class="${daysCls}">${s.deadline_dt} <em style="font-size:10px">(${daysLabel})</em></span>
+            </div>
+          </div>
+          ${s.signoff_notes ? `
+            <div class="signoff-breaking">
+              <strong>Breaking Change</strong>
+              ${s.signoff_notes}
+            </div>
+          ` : ''}
+          ${s.signoff_dts ? `
+            <div style="margin-top:8px;font-size:11px;color:var(--green)">
+              &#10003; Signed off at ${formatTs(s.signoff_dts).replace(' UTC', '')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Version summary table
+  const tbody = document.getElementById('versionBody');
+  if (ifaces.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">No interfaces.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = ifaces.map(i => {
+    const dotColour = i.publication_status === 'PUBLISHED' ? 'var(--green)' :
+                      i.publication_status === 'NON_COMPLIANT' ? 'var(--red)' :
+                      i.publication_status === 'SUSPENDED' ? 'var(--purple)' : 'var(--grey)';
+    return `
+      <tr>
+        <td class="mono-cell">${i.interface_name}</td>
+        <td><span style="font-family:'Courier New',monospace;font-size:12px">v${i.version}</span></td>
+        <td>
+          <span class="version-status-dot" style="background:${dotColour}"></span>
+          ${pubStatusPill(i.publication_status)}
+        </td>
+        <td>${gateModePill(i.publication_gate_mode)}</td>
+        <td>${i.owner}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ---- TRIAGE TAB -----------------------------------------------
+
+const SEVERITY_ORDER = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+
+function renderTriage(productId) {
+  const openVios = VIOLATIONS_ALL.filter(
+    v => v.product === productId && triageState[v.violation_id] !== 'acknowledged'
+  );
+
+  const sorted = [...openVios].sort((a, b) =>
+    (SEVERITY_ORDER[a.rule_severity] || 99) - (SEVERITY_ORDER[b.rule_severity] || 99)
+  );
+
+  const consumers = CONSUMERS_ALL[productId] || [];
+
+  const list = document.getElementById('triageList');
+
+  if (sorted.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">&#10003;</div>
+      <p>Triage queue clear — no open violations for this product.</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = sorted.map(v => {
+    const statusLabel = triageState[v.violation_id] === 'in_progress' ? 'IN_PROGRESS' : v.remediation_status;
+    const affectedConsumers = consumers.filter(c =>
+      c.interface_name === v.interface_name && (c.impact_status === 'AFFECTED' || c.impact_status === 'DEGRADED')
+    );
+    const channelHtml = affectedConsumers.map(c =>
+      `<span class="triage-channel">${c.notification_channel}</span>`
+    ).join(' ');
+
+    return `
+      <div class="triage-item ${v.rule_severity.toLowerCase()}" id="triage-${v.violation_id}">
+        <div class="triage-sev-col">${severityPill(v.rule_severity)}</div>
+        <div class="triage-body-col">
+          <div class="triage-rule">${v.rule_name}</div>
+          <div class="triage-message">${v.violation_message}</div>
+          <div class="triage-meta">
+            <div class="triage-meta-item">&#9679; ${v.interface_name}</div>
+            <div class="triage-meta-item">&#9786; ${v.affected_consumer_count} consumer${v.affected_consumer_count !== 1 ? 's' : ''} affected</div>
+            <div class="triage-meta-item">Detected: ${formatTs(v.detected_dts)}</div>
+            ${channelHtml ? `<div class="triage-meta-item">Notify: ${channelHtml}</div>` : ''}
+          </div>
+        </div>
+        <div class="triage-actions">
+          <span id="triage-status-${v.violation_id}">
+            ${remStatusPill(statusLabel, `triage-${v.violation_id}`)}
+          </span>
+          <button class="btn-sm teal" onclick="triageAssignMe('${v.violation_id}')">Assign to me</button>
+          <button class="btn-sm" onclick="triageMarkInProgress('${v.violation_id}')">Mark In Progress</button>
+          <button class="btn-sm" style="color:var(--muted)" onclick="triageAcknowledge('${v.violation_id}', '${productId}')">Acknowledge</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+</script>
+
+<!-- ============================================================
+     INTERACTION LAYER
+     ============================================================ -->
+<script>
+// ---- TAB SWITCHING --------------------------------------------
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+
+  // Trigger SLA bar animation when SLA tab is shown
+  if (tabId === 'tab-sla') {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.sla-bar-fill').forEach(bar => {
+          bar.style.width = bar.dataset.fill + '%';
+        });
+      });
+    });
+  }
+}
+
+// ---- PRODUCT SELECTOR -----------------------------------------
+
+document.getElementById('productSelect').addEventListener('change', function() {
+  const fade = document.querySelector('.main-panel');
+  fade.style.opacity = '0.6';
+  fade.style.transition = 'opacity 0.15s';
+  setTimeout(() => {
+    renderAll(this.value);
+    fade.style.opacity = '1';
+  }, 150);
+});
+
+// ---- REFRESH BUTTON -------------------------------------------
+
+function handleRefresh() {
+  const icon = document.getElementById('refreshIcon');
+  icon.classList.add('spinning');
+  // Update timestamp to "now" (simulated)
+  document.getElementById('lastRefreshedTime').textContent = '07:03 UTC';
+  setTimeout(() => icon.classList.remove('spinning'), 700);
+}
+
+// ---- SORT LOGIC -----------------------------------------------
+
+function applySortState(data, tableKey, defaultCol, defaultDir) {
+  const state = sortStates[tableKey];
+  const col   = (state && state.col) ? state.col : defaultCol;
+  const dir   = (state && state.dir) ? state.dir : (defaultDir || 'asc');
+
+  return [...data].sort((a, b) => {
+    const va = a[col] == null ? '' : a[col];
+    const vb = b[col] == null ? '' : b[col];
+
+    // Severity custom sort
+    if (col === 'rule_severity') {
+      const so = SEVERITY_ORDER;
+      return dir === 'asc'
+        ? (so[va] || 99) - (so[vb] || 99)
+        : (so[vb] || 99) - (so[va] || 99);
+    }
+
+    // Impact status custom sort: AFFECTED first
+    if (col === 'impact_status') {
+      const io = { AFFECTED: 0, DEGRADED: 1, OK: 2 };
+      return dir === 'asc'
+        ? (io[va] || 99) - (io[vb] || 99)
+        : (io[vb] || 99) - (io[va] || 99);
+    }
+
+    // Numeric
+    if (typeof va === 'number') {
+      return dir === 'asc' ? va - vb : vb - va;
+    }
+
+    // String
+    const cmp = String(va).localeCompare(String(vb));
+    return dir === 'asc' ? cmp : -cmp;
+  });
+}
+
+function sortTable(tableKey, col, thEl) {
+  const state = sortStates[tableKey];
+  const prevCol = state ? state.col : null;
+  const prevDir = state ? state.dir : 'asc';
+
+  const newDir = (col === prevCol && prevDir === 'asc') ? 'desc' : 'asc';
+  sortStates[tableKey] = { col, dir: newDir };
+
+  // Update header classes
+  const table = thEl.closest('table');
+  table.querySelectorAll('th').forEach(th => {
+    th.classList.remove('sorted-asc', 'sorted-desc');
+  });
+  thEl.classList.add(newDir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+
+  // Re-render relevant tab
+  if (tableKey === 'violations') renderViolations(currentProduct, activeViolationFilter);
+  if (tableKey === 'consumers')  renderConsumers(currentProduct);
+}
+
+// ---- SIDE PANEL -----------------------------------------------
+
+function openSidePanel(interfaceName, productId) {
+  const iface = (INTERFACES[productId] || []).find(i => i.interface_name === interfaceName);
+  if (!iface) return;
+
+  const violations = VIOLATIONS_ALL.filter(
+    v => v.product === productId && v.interface_name === interfaceName
+  );
+
+  const runs  = VALIDATION_RUNS[interfaceName] || [];
+  const agoText = iface.last_validated_dts ? formatAgo(iface.last_validated_dts) : 'Never';
+  const sla   = slaStatus(iface);
+
+  document.getElementById('panelTitle').textContent    = interfaceName;
+  document.getElementById('panelSubtitle').textContent =
+    productDisplayName(productId) + ' — v' + iface.version;
+
+  const valRunHtml = runs.map(r => {
+    const icon   = r.result === 'PASSING' ? '&#10003;' : r.result === 'WARNING' ? '&#9651;' : r.result === 'FAILING' ? '&#10005;' : '&#9679;';
+    const colour = r.result === 'PASSING' ? 'var(--green)' : r.result === 'WARNING' ? 'var(--amber)' : r.result === 'FAILING' ? 'var(--red)' : 'var(--grey)';
+    return `
+      <div class="validation-run">
+        <span class="val-icon" style="color:${colour}">${icon}</span>
+        <span class="val-time">${r.ts ? formatTs(r.ts) : 'N/A'}</span>
+        <span class="val-result" style="color:${colour}">${r.label}</span>
+      </div>
+    `;
+  }).join('');
+
+  const violationsHtml = violations.length === 0
+    ? '<p style="font-size:12px;color:var(--muted)">No open violations for this interface.</p>'
+    : violations.map(v => `
+        <div style="padding:10px;border-radius:6px;background:var(--red-bg);border-left:3px solid var(--red);margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            ${severityPill(v.rule_severity)}
+            ${remStatusPill(v.remediation_status, v.violation_id)}
+          </div>
+          <div style="font-family:'Courier New',monospace;font-size:12px;margin-bottom:4px">${v.rule_name}</div>
+          <div style="font-size:12px;color:var(--muted)">${v.violation_message}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Detected: ${formatTs(v.detected_dts)}</div>
+        </div>
+      `).join('');
+
+  document.getElementById('panelBody').innerHTML = `
+    <div class="panel-section">
+      <div class="panel-section-title">Interface Details</div>
+      <div class="panel-field-grid">
+        <div class="panel-field">
+          <label>Publication Status</label>
+          <span>${pubStatusPill(iface.publication_status)}</span>
+        </div>
+        <div class="panel-field">
+          <label>Validation Status</label>
+          <span>${valStatusPill(iface.validation_status)}</span>
+        </div>
+        <div class="panel-field">
+          <label>Version</label>
+          <span class="mono">${iface.version}</span>
+        </div>
+        <div class="panel-field">
+          <label>Gate Mode</label>
+          <span>${gateModePill(iface.publication_gate_mode)}</span>
+        </div>
+        <div class="panel-field">
+          <label>Owner</label>
+          <span>${iface.owner}</span>
+        </div>
+        <div class="panel-field">
+          <label>Compliant</label>
+          <span style="color:${iface.is_compliant ? 'var(--green)' : 'var(--red)'};font-weight:600">
+            ${iface.is_compliant ? '&#10003; Yes' : '&#10005; No'}
+          </span>
+        </div>
+        <div class="panel-field">
+          <label>Freshness SLA</label>
+          <span>${iface.freshness_sla_minutes >= 60
+            ? Math.floor(iface.freshness_sla_minutes / 60) + 'h (' + iface.freshness_sla_minutes + ' min)'
+            : iface.freshness_sla_minutes + ' min'}</span>
+        </div>
+        <div class="panel-field">
+          <label>Last Validated</label>
+          <span>${agoText}</span>
+        </div>
+      </div>
+      ${iface.last_validated_dts ? `
+        <div style="margin-top:12px">
+          <div class="sla-bar-container">
+            <div class="sla-bar-fill ${sla.cls}" style="width:${Math.min(sla.pct, 100)}%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px">
+            <span>${sla.elapsed !== undefined ? sla.elapsed + ' min elapsed' : ''}</span>
+            <span>SLA: ${iface.freshness_sla_minutes} min (${sla.pctLabel} used)</span>
+          </div>
+        </div>
+      ` : ''}
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Last 3 Validation Runs</div>
+      ${valRunHtml}
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Open Violations</div>
+      ${violationsHtml}
+    </div>
+  `;
+
+  document.getElementById('panelOverlay').classList.add('open');
+  document.getElementById('sidePanel').classList.add('open');
+}
+
+function closeSidePanel() {
+  document.getElementById('panelOverlay').classList.remove('open');
+  document.getElementById('sidePanel').classList.remove('open');
+}
+
+// Close on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSidePanel();
+});
+
+// ---- VIOLATION ASSIGNMENT -------------------------------------
+
+function assignViolation(violationId) {
+  const v = VIOLATIONS_ALL.find(x => x.violation_id === violationId);
+  if (v) {
+    alert(`Assigned violation ${violationId} (${v.rule_name}) to current user.\n\nIn a live system this would update the remediation_owner and set status to IN_PROGRESS in the contract log table.`);
+  }
+}
+
+// ---- TRIAGE ACTIONS ------------------------------------------
+
+function triageAssignMe(violationId) {
+  alert(`Violation ${violationId} assigned to current user.\n\nRemove yourself from on-call triage queue by marking In Progress.`);
+}
+
+function triageMarkInProgress(violationId) {
+  triageState[violationId] = 'in_progress';
+  const statusEl = document.getElementById(`triage-status-${violationId}`);
+  if (statusEl) {
+    statusEl.innerHTML = remStatusPill('IN_PROGRESS', `triage-${violationId}`);
+  }
+}
+
+function triageAcknowledge(violationId, productId) {
+  triageState[violationId] = 'acknowledged';
+  const row = document.getElementById(`triage-${violationId}`);
+  if (row) {
+    row.classList.add('removing');
+    setTimeout(() => renderTriage(productId), 450);
+  }
+}
+
+// ---- BOOTSTRAP ------------------------------------------------
+
+renderAll('customer360');
+</script>
+
+</body>
+</html>
