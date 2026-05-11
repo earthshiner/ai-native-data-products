@@ -208,6 +208,9 @@ The contracted view, table, or endpoint. One row per interface per contract vers
 | `availability_sla_pct` | DECIMAL(5,2) | Minimum availability percentage (e.g., `99.5`) |
 | `validation_status` | VARCHAR(20) NOT NULL DEFAULT 'UNKNOWN' | `PASSING`, `FAILING`, `WARNING`, `UNKNOWN` — updated by last validation run |
 | `last_validated_dts` | TIMESTAMP(6) WITH TIME ZONE | Timestamp of last validation run |
+| `publication_status` | VARCHAR(20) NOT NULL DEFAULT 'UNPUBLISHED' | `UNPUBLISHED`, `PUBLISHED`, `SUSPENDED`, `NON_COMPLIANT` — controls whether the Access layer serves data from this interface. See Section 5.3. |
+| `publication_gate_mode` | VARCHAR(20) NOT NULL DEFAULT 'ADVISORY' | `ADVISORY` = record violation and alert but continue serving data; `BLOCKING` = set `NON_COMPLIANT` and suppress Access layer output on CRITICAL failure. Production interfaces should use `BLOCKING`. |
+| `non_compliant_since_dts` | TIMESTAMP(6) WITH TIME ZONE | Timestamp when the interface entered `NON_COMPLIANT` status. NULL when `PUBLISHED`. |
 | `is_active` | BYTEINT NOT NULL DEFAULT 1 | Soft-delete indicator |
 | `created_at` | TIMESTAMP(6) WITH TIME ZONE | Record creation timestamp |
 
@@ -241,13 +244,16 @@ Validation rules that operationalise the contract. One row per rule per interfac
 | `contract_interface_id` | INTEGER NOT NULL | FK → `contract_interface.contract_interface_id` |
 | `contract_field_id` | INTEGER | FK → `contract_field.contract_field_id`; NULL for table-level rules |
 | `rule_name` | VARCHAR(200) NOT NULL | Unique name for this rule (e.g., `customer_id_not_null`) |
-| `rule_type` | VARCHAR(50) NOT NULL | `QUALITY`, `FRESHNESS`, `SLA`, `REFERENTIAL`, `VALUE_DOMAIN`, `ROW_COUNT` |
+| `rule_type` | VARCHAR(50) NOT NULL | `QUALITY`, `FRESHNESS`, `SLA`, `REFERENTIAL`, `VALUE_DOMAIN`, `ROW_COUNT`, `SCHEMA` — broad classification |
+| `rule_sub_type` | VARCHAR(50) NOT NULL | Specific check type. See Section 4.3 for the full enumeration. |
 | `rule_description` | VARCHAR(1000) NOT NULL | What the rule checks and why it matters |
 | `rule_severity` | VARCHAR(20) NOT NULL | `CRITICAL`, `HIGH`, `MEDIUM`, `LOW` — see Section 8 |
 | `rule_logic` | VARCHAR(4000) | SQL expression or prose description of the validation check |
-| `threshold_value` | DECIMAL(15,4) | Numeric threshold (e.g., completeness >= 0.99) |
+| `threshold_value` | DECIMAL(15,4) | Numeric threshold (e.g., null rate <= 0.01 → `threshold_value = 0.01`) |
 | `threshold_operator` | VARCHAR(10) | `>=`, `<=`, `=`, `>`, `<` |
+| `threshold_unit` | VARCHAR(20) | Unit for the threshold where applicable: `PROPORTION` (0.0–1.0), `COUNT`, `MINUTES`, `PERCENT` |
 | `is_enforced` | BYTEINT NOT NULL DEFAULT 1 | 1 = failures generate violations; 0 = monitoring only |
+| `gates_publication` | BYTEINT NOT NULL DEFAULT 1 | 1 = a FAIL on this rule triggers the publication gate (sets `NON_COMPLIANT`); applies only when `is_enforced = 1` and `publication_gate_mode = 'BLOCKING'`. CRITICAL rules must always gate. |
 | `is_active` | BYTEINT NOT NULL DEFAULT 1 | Soft-delete indicator |
 | `created_at` | TIMESTAMP(6) WITH TIME ZONE | Record creation timestamp |
 
@@ -408,6 +414,56 @@ Evidence of consumer acknowledgement for breaking changes. One row per sign-off 
 
 ---
 
+### 4.4 Rule Sub-Type Reference
+
+Every `contract_rule` row must carry a `rule_sub_type` drawn from the following enumeration. The sub-type determines the precise check being performed and whether it gates publication (see Section 5.3).
+
+#### 4.4.1 `rule_sub_type` Enumeration
+
+| `rule_sub_type` | Parent `rule_type` | What it checks | `threshold_unit` | Default severity | Gates publication |
+|---|---|---|---|---|---|
+| `ROW_COUNT_MIN` | `ROW_COUNT` | Row count ≥ threshold. Catches empty or truncated loads. | `COUNT` | `CRITICAL` | Yes |
+| `ROW_COUNT_RANGE` | `ROW_COUNT` | Row count within a min–max band. Use for predictable-cardinality interfaces. | `COUNT` | `HIGH` | Yes |
+| `NULL_RATE_MAX` | `QUALITY` | Proportion of NULL values ≤ threshold (0.0–1.0). Applied per field. | `PROPORTION` | `CRITICAL` for PK/FK fields; `HIGH` otherwise | Yes for CRITICAL |
+| `UNIQUENESS` | `QUALITY` | No duplicate values for the specified field or column combination. | — | `CRITICAL` for PK fields; `HIGH` for business keys | Yes |
+| `VALUE_RANGE` | `QUALITY` | Numeric value falls within declared min–max bounds. | `COUNT` or domain-specific | `HIGH` | Yes for CRITICAL |
+| `VALUE_SET` | `VALUE_DOMAIN` | Value is a member of the declared allowed set (use `contract_field.allowed_values_json`). | — | `MEDIUM` | No (advisory by default) |
+| `REFERENTIAL_INTEGRITY` | `REFERENTIAL` | Every value in the field exists in the referenced table or contracted interface. | — | `HIGH` | Yes |
+| `PATTERN_MATCH` | `QUALITY` | Value matches a declared regex or format specification (e.g., BSB format, ISO date). | — | `MEDIUM` | No (advisory by default) |
+| `FRESHNESS_MAX_AGE` | `FRESHNESS` | Data is not older than `contract_interface.freshness_sla_minutes`. | `MINUTES` | `CRITICAL` | Yes |
+| `SCHEMA_VALIDATION` | `SCHEMA` | Physical schema of the interface matches the contracted column list, types, and nullability in `contract_field`. Checks for removed columns, type changes, and added NOT NULL constraints. | — | `CRITICAL` | Yes |
+| `AVAILABILITY` | `SLA` | Interface responded within `contract_interface.availability_sla_pct` of attempts. | `PERCENT` | `HIGH` | Yes |
+
+#### 4.4.2 How `rule_type` and `rule_sub_type` Relate
+
+`rule_type` is the broad classification used for filtering, reporting, and ODCS mapping. `rule_sub_type` is the precise check type used by the validation engine to determine how to execute the rule. Both are always required.
+
+Example:
+
+```
+rule_type   = QUALITY
+rule_sub_type = NULL_RATE_MAX
+rule_logic  = CAST(SUM(CASE WHEN customer_id IS NULL THEN 1 ELSE 0 END) AS DECIMAL(15,6))
+              / NULLIFZERO(COUNT(*)) <= 0.0
+threshold_value    = 0.0
+threshold_operator = <=
+threshold_unit     = PROPORTION
+rule_severity      = CRITICAL
+gates_publication  = 1
+```
+
+#### 4.4.3 Minimum Required Sub-Types per Interface
+
+Section 15.2 defines the mandatory floor. Every contracted interface must have at minimum:
+- One `FRESHNESS_MAX_AGE` rule at `CRITICAL` severity with `gates_publication = 1`.
+- One `ROW_COUNT_MIN` rule at `CRITICAL` severity with `gates_publication = 1`.
+- One `NULL_RATE_MAX` rule for each primary key field at `CRITICAL` severity with `gates_publication = 1`.
+- One `SCHEMA_VALIDATION` rule at `CRITICAL` severity with `gates_publication = 1`.
+
+These four form the **contract floor**. An interface without all four may not be deployed to production.
+
+---
+
 ## 5. Contract Lifecycle
 
 The contract lifecycle has eight steps. Each step has defined entry criteria, responsible parties, and output destinations.
@@ -415,8 +471,16 @@ The contract lifecycle has eight steps. Each step has defined entry criteria, re
 ### 5.1 Lifecycle Overview
 
 ```
-DEFINE → VERSION → REGISTER → VALIDATE → ENFORCE → ALERT → EVIDENCE → CHANGE-CONTROL
+DEFINE → VERSION → REGISTER → VALIDATE → ENFORCE ──► GATE ──► ALERT → EVIDENCE → CHANGE-CONTROL
+                                                          │
+                                                          ▼
+                                                   publication_status
+                                                   PUBLISHED / NON_COMPLIANT
+                                                   (Access layer checks this
+                                                    before serving data)
 ```
+
+See Section 5.3 for the full publication gate specification.
 
 ### 5.2 Step-by-Step Description
 
@@ -487,6 +551,100 @@ DEFINE → VERSION → REGISTER → VALIDATE → ENFORCE → ALERT → EVIDENCE 
 **Entry criteria:** A `FAIL` result exists in `contract_validation_result` for a rule with `is_enforced = 1`.
 
 **Exit criteria:** `contract_violation` row created. `consumer_impact` assessed. `affected_consumer_count` populated.
+
+---
+
+---
+
+### 5.3 Publication Gate (Pre-Consumption Enforcement)
+
+The publication gate is the mechanism that prevents bad data from reaching consumers before they depend on it. It is the runtime expression of the principle that a data contract is not a wish — it is an enforceable commitment.
+
+#### 5.3.1 The Gate Principle
+
+Validation must complete **before** the interface is marked as available for consumer use. If CRITICAL-severity enforced rules fail, the interface must not serve data to downstream consumers. This mirrors the article-level principle: validate upstream of the consumer load, not after.
+
+The `publication_status` column on `contract_interface` is the gate state. Access layer views and consuming pipelines check this status before processing data.
+
+#### 5.3.2 Publication Status Values
+
+| Status | Meaning | Access layer behaviour |
+|--------|---------|----------------------|
+| `UNPUBLISHED` | Interface registered but not yet through first validation cycle | Return no rows. The interface is not ready. |
+| `PUBLISHED` | Last validation passed all CRITICAL and HIGH rules | Return data normally. |
+| `SUSPENDED` | Manually suspended by the contract owner (planned maintenance, emergency hold) | Return no rows. Log the suspension reason. |
+| `NON_COMPLIANT` | Validation detected a CRITICAL or HIGH failure with `is_enforced = 1` and `publication_gate_mode = 'BLOCKING'` | Return no rows for BLOCKING mode. Return data with a non-compliance flag for ADVISORY mode. |
+
+#### 5.3.3 Gate Mode
+
+`publication_gate_mode` on `contract_interface` determines the behaviour on CRITICAL failure:
+
+| Mode | Behaviour | When to use |
+|------|-----------|------------|
+| `BLOCKING` | Sets `publication_status = 'NON_COMPLIANT'`. Access layer views return no rows until status is resolved. | Production interfaces (regulatory reporting, AI model inputs, fraud detection, channel-facing data). |
+| `ADVISORY` | Records the violation and alerts but does not set `NON_COMPLIANT`. Access layer continues serving data. | Development, exploratory analytics, or interfaces where partial data is preferable to no data. Document the choice in `contract_design_decision`. |
+
+**Default for new production interfaces: `BLOCKING`.**
+
+#### 5.3.4 State Transition Rules
+
+```
+UNPUBLISHED  ──[first validation passes all CRITICAL rules]──►  PUBLISHED
+PUBLISHED    ──[CRITICAL failure + BLOCKING mode]──────────────►  NON_COMPLIANT
+PUBLISHED    ──[manual suspend by owner]───────────────────────►  SUSPENDED
+NON_COMPLIANT ──[all violations resolved + re-validation passes]──►  PUBLISHED
+SUSPENDED    ──[owner lifts suspension]────────────────────────►  PUBLISHED (or UNPUBLISHED if never published)
+```
+
+#### 5.3.5 Validation Pipeline Obligations
+
+The validation pipeline (Step 4: VALIDATE) must, in order:
+
+1. Execute all `contract_rule` rows where `is_enforced = 1` for the interface.
+2. Write results to `contract_validation_run` and `contract_validation_result`.
+3. If any CRITICAL rule produces a `FAIL` result **and** `publication_gate_mode = 'BLOCKING'`:
+   - Set `contract_interface.publication_status = 'NON_COMPLIANT'`.
+   - Set `contract_interface.non_compliant_since_dts = CURRENT_TIMESTAMP(6)`.
+4. If all CRITICAL and HIGH rules produce `PASS` results and the previous status was `NON_COMPLIANT`:
+   - Set `contract_interface.publication_status = 'PUBLISHED'`.
+   - Set `contract_interface.non_compliant_since_dts = NULL`.
+5. Update `contract_interface.validation_status` and `contract_interface.last_validated_dts`.
+6. Update `contract_sla_status.freshness_status`.
+
+**The publication gate update (steps 3–4) must complete before the pipeline returns success and before any downstream consumer job is scheduled.**
+
+#### 5.3.6 Access Layer Implementation
+
+Every view in `{Product}_Access_V` that exposes a contracted interface must include a gate check. This is the mechanism by which the contract prevents bad data from reaching consumers.
+
+Pattern (Teradata SQL):
+
+```sql
+replace view customer360_access_v.customer_current
+as
+locking row for access
+select
+     d.customer_id
+    ,d.customer_name
+    ,d.customer_status_cd
+    ,d.last_updated_dts
+from customer360_domain.customer_current_h as d
+where d.is_current_ind = 1
+  and exists (
+    -- Publication gate: only serve data when contract is PUBLISHED
+    select 1
+    from customer360_semantic.contract_interface as ci
+    where ci.database_name   = 'customer360_access_v'
+      and ci.object_name     = 'customer_current'
+      and ci.publication_status = 'PUBLISHED'
+      and ci.is_active       = 1
+)
+;
+```
+
+**When the gate check fails (no row returned from the subquery), the view returns no rows.** This prevents consumers from loading stale, violating, or suspended data without any application-level code change.
+
+> **Note:** The gate check subquery carries a negligible performance cost because `contract_interface` is a metadata table with a small number of rows. On Teradata, this row is in the FastPath cache after the first access. The check is mandatory for all BLOCKING-mode interfaces.
 
 ---
 
@@ -1201,7 +1359,13 @@ The following checklist must be completed before any data product interface is d
 - [ ] Created a `contract_version` row at version `1.0.0` with `effective_from_dt` set
 - [ ] Created a `contract_interface` row for each physical view or table covered by the contract
 - [ ] Created `contract_field` rows for every field in each contracted interface, with `data_classification` and `breaking_change_rule` set
-- [ ] Created at least one `contract_rule` per interface covering freshness and a minimum of one quality dimension (completeness, validity, or uniqueness)
+- [ ] Created the mandatory contract floor rules for each interface (see Section 15.2):
+  - [ ] One `FRESHNESS_MAX_AGE` rule — `rule_type = FRESHNESS`, `rule_severity = CRITICAL`, `gates_publication = 1`
+  - [ ] One `ROW_COUNT_MIN` rule — `rule_type = ROW_COUNT`, `rule_severity = CRITICAL`, `gates_publication = 1`
+  - [ ] One `NULL_RATE_MAX` rule per primary key field — `rule_type = QUALITY`, `rule_severity = CRITICAL`, `gates_publication = 1`
+  - [ ] One `SCHEMA_VALIDATION` rule — `rule_type = SCHEMA`, `rule_severity = CRITICAL`, `gates_publication = 1`
+- [ ] Set `publication_gate_mode` on each `contract_interface` row: `BLOCKING` for production interfaces, `ADVISORY` for development/exploratory interfaces (document ADVISORY choice in `contract_design_decision`)
+- [ ] Verified that `contract_interface.publication_status = 'UNPUBLISHED'` before the first validation cycle runs
 - [ ] Registered all known consumers in `contract_consumer` against the `1.0.0` version
 
 **Validation (Observability module):**
@@ -1234,6 +1398,86 @@ The following checklist must be completed before any data product interface is d
 
 ---
 
+### 15.2 Minimum Rule Coverage Standard (Contract Floor)
+
+Every contracted interface, regardless of type, must meet the following minimum coverage before it may be deployed to production. These four rules are the **contract floor** — the baseline below which no interface may operate.
+
+| # | `rule_sub_type` | `rule_type` | Severity | `gates_publication` | What it proves |
+|---|---|---|---|---|---|
+| 1 | `FRESHNESS_MAX_AGE` | `FRESHNESS` | `CRITICAL` | 1 | Data is not stale beyond the committed SLA. Consumers can trust the recency of what they receive. |
+| 2 | `ROW_COUNT_MIN` | `ROW_COUNT` | `CRITICAL` | 1 | The interface did not load empty or truncated. A dataset with zero rows is almost never correct. |
+| 3 | `NULL_RATE_MAX` (one per PK field) | `QUALITY` | `CRITICAL` | 1 | Primary key fields are not null. A NULL primary key indicates a fundamental pipeline or source failure. |
+| 4 | `SCHEMA_VALIDATION` | `SCHEMA` | `CRITICAL` | 1 | The physical schema matches the contract. Consumers depend on contracted column names, types, and nullability. |
+
+#### 15.2.1 Rationale
+
+These four correspond directly to the four coverage areas identified in production data contract practice:
+
+| Coverage area | Contract floor rule |
+|---|---|
+| Schema | `SCHEMA_VALIDATION` |
+| Quality | `NULL_RATE_MAX` on primary key(s) |
+| Freshness | `FRESHNESS_MAX_AGE` |
+| Completeness | `ROW_COUNT_MIN` |
+
+An interface with only these four rules is still a minimal contract — designers are expected to add further quality, referential, and value-domain rules as appropriate for the interface's consumer obligations. But without these four, the contract does not provide the basic assurance that consumers require.
+
+#### 15.2.2 Additional Recommended Rules
+
+Beyond the floor, the following are strongly recommended for all production interfaces:
+
+| `rule_sub_type` | Recommended for | Notes |
+|---|---|---|
+| `NULL_RATE_MAX` | All mandatory business fields beyond PK | e.g., `customer_status_cd`, `account_type_cd` |
+| `UNIQUENESS` | All business key fields | Prevents duplicate rows that corrupt consumer aggregations |
+| `VALUE_SET` | All coded fields with a controlled vocabulary | e.g., status codes, type codes, classification codes |
+| `REFERENTIAL_INTEGRITY` | All FK fields that reference contracted interfaces | Especially important when the consumer joins across products |
+| `ROW_COUNT_RANGE` | Interfaces with predictable cardinality | e.g., a daily snapshot table should not suddenly have 10× the usual rows |
+
+#### 15.2.3 Example — Minimum Floor for `customer_current`
+
+```
+Rule 1: FRESHNESS_MAX_AGE
+  rule_type = FRESHNESS
+  rule_sub_type = FRESHNESS_MAX_AGE
+  threshold_value = 960        -- 16 hours; allows overnight batch with margin
+  threshold_operator = <=
+  threshold_unit = MINUTES
+  rule_severity = CRITICAL
+  gates_publication = 1
+
+Rule 2: ROW_COUNT_MIN
+  rule_type = ROW_COUNT
+  rule_sub_type = ROW_COUNT_MIN
+  threshold_value = 1000000    -- expect at least 1 million active customers
+  threshold_operator = >=
+  threshold_unit = COUNT
+  rule_severity = CRITICAL
+  gates_publication = 1
+
+Rule 3: NULL_RATE_MAX on customer_id
+  rule_type = QUALITY
+  rule_sub_type = NULL_RATE_MAX
+  contract_field_id = (FK to customer_id field)
+  threshold_value = 0.0        -- zero nulls permitted on PK
+  threshold_operator = <=
+  threshold_unit = PROPORTION
+  rule_severity = CRITICAL
+  gates_publication = 1
+
+Rule 4: SCHEMA_VALIDATION
+  rule_type = SCHEMA
+  rule_sub_type = SCHEMA_VALIDATION
+  rule_logic = 'Compare physical schema of customer360_access_v.customer_current
+                against all active contract_field rows for this interface.
+                Fail if any contracted column is absent, type-changed,
+                or nullability-tightened.'
+  rule_severity = CRITICAL
+  gates_publication = 1
+```
+
+---
+
 ## Appendix: Quick Reference
 
 ### Module Responsibilities
@@ -1249,7 +1493,26 @@ Access       → roles and grants tied to contract interfaces and versions
 ### Lifecycle
 
 ```
-DEFINE → VERSION → REGISTER → VALIDATE → ENFORCE → ALERT → EVIDENCE → CHANGE-CONTROL
+DEFINE → VERSION → REGISTER → VALIDATE → ENFORCE → GATE → ALERT → EVIDENCE → CHANGE-CONTROL
+                                                     │
+                                               publication_status:
+                                               PUBLISHED / NON_COMPLIANT
+```
+
+### Publication Gate
+
+```
+publication_gate_mode = BLOCKING  → CRITICAL failure sets NON_COMPLIANT; Access view returns no rows
+publication_gate_mode = ADVISORY  → CRITICAL failure alerts but does not block; document in contract_design_decision
+```
+
+### Contract Floor (mandatory rules per interface)
+
+```
+FRESHNESS_MAX_AGE   → CRITICAL → gates_publication = 1
+ROW_COUNT_MIN       → CRITICAL → gates_publication = 1
+NULL_RATE_MAX (PK)  → CRITICAL → gates_publication = 1
+SCHEMA_VALIDATION   → CRITICAL → gates_publication = 1
 ```
 
 ### Violation Severity
