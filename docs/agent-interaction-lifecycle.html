@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Agent Interaction Lifecycle — AI-Native Data Product</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #374151;
+      background: #f8fafb;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────── */
+    .page-header {
+      background: #0E2A33;
+      color: #FFFFFF;
+      padding: 2.5rem 2rem 2rem;
+      text-align: center;
+    }
+
+    .page-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header .subtitle {
+      font-size: 1rem;
+      color: #E7F3F1;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    section {
+      margin-bottom: 3rem;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #0E2A33;
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid #E7F3F1;
+    }
+
+    /* ── Callout boxes ────────────────────────────────────────── */
+    .callout {
+      border-radius: 8px;
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .callout-teal {
+      background: #E7F3F1;
+      border-left: 4px solid #196F6B;
+    }
+
+    .callout-amber {
+      background: #FFFBEB;
+      border-left: 4px solid #D97706;
+    }
+
+    .callout p {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.65;
+    }
+
+    .callout strong {
+      color: #0E2A33;
+    }
+
+    /* ── Step flow ────────────────────────────────────────────── */
+    .flow {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* Vertical connector line */
+    .flow-connector {
+      width: 2px;
+      height: 1.5rem;
+      background: #196F6B;
+      margin-left: 1.5rem;
+      opacity: 0.4;
+    }
+
+    .step-card {
+      display: flex;
+      gap: 1rem;
+      background: #FFFFFF;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 1.1rem 1.25rem;
+      position: relative;
+    }
+
+    .step-card:hover {
+      border-color: #196F6B;
+      box-shadow: 0 2px 8px rgba(25, 111, 107, 0.12);
+    }
+
+    .step-number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: #196F6B;
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.15rem;
+    }
+
+    .step-agent-internal .step-number {
+      background: #6b7280;
+    }
+
+    .step-body {
+      flex: 1;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-name {
+      font-weight: 700;
+      color: #0E2A33;
+      font-size: 0.975rem;
+    }
+
+    /* Module badges */
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-semantic  { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+    .badge-domain    { background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
+    .badge-memory    { background: #FDF4FF; color: #7E22CE; border: 1px solid #E9D5FF; }
+    .badge-observability { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
+    .badge-internal  { background: #F9FAFB; color: #6B7280; border: 1px solid #E5E7EB; }
+
+    /* Operation type badges */
+    .op-read  { background: #DBEAFE; color: #1D4ED8; border: 1px solid #93C5FD; }
+    .op-write { background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
+    .op-internal { background: #F3F4F6; color: #6B7280; border: 1px solid #D1D5DB; }
+
+    .step-db {
+      font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+      font-size: 0.78rem;
+      color: #6B7280;
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      border-radius: 4px;
+      padding: 0.1rem 0.45rem;
+      margin-top: 0.2rem;
+      display: inline-block;
+    }
+
+    .step-bullets {
+      margin-top: 0.55rem;
+      padding-left: 1.1rem;
+    }
+
+    .step-bullets li {
+      font-size: 0.875rem;
+      color: #4B5563;
+      margin-bottom: 0.3rem;
+      line-height: 1.55;
+    }
+
+    /* ── Role matrix table ────────────────────────────────────── */
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 0.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      background: #FFFFFF;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+    }
+
+    thead tr {
+      background: #0E2A33;
+      color: #FFFFFF;
+    }
+
+    thead th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.82rem;
+      letter-spacing: 0.02em;
+    }
+
+    tbody tr:nth-child(even) { background: #F9FAFB; }
+    tbody tr:hover { background: #E7F3F1; }
+
+    tbody td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid #E5E7EB;
+      vertical-align: middle;
+    }
+
+    .td-op {
+      font-size: 0.82rem;
+      color: #374151;
+    }
+
+    .check-yes { color: #059669; font-size: 1.1rem; font-weight: 700; }
+    .check-no  { color: #DC2626; font-size: 1.1rem; font-weight: 700; }
+
+    /* ── Module cards (Section 4) ─────────────────────────────── */
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .module-card {
+      background: #FFFFFF;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 1.1rem 1.2rem;
+    }
+
+    .module-card:hover {
+      border-color: #196F6B;
+      box-shadow: 0 2px 8px rgba(25, 111, 107, 0.1);
+    }
+
+    .module-card-title {
+      font-weight: 700;
+      color: #0E2A33;
+      font-size: 0.975rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .module-card h4 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.4rem;
+      margin-top: 0.65rem;
+    }
+
+    .module-card h4.read-heading  { color: #2563EB; }
+    .module-card h4.write-heading { color: #059669; }
+
+    .module-card ul {
+      padding-left: 1.1rem;
+      margin: 0;
+    }
+
+    .module-card li {
+      font-size: 0.83rem;
+      color: #4B5563;
+      margin-bottom: 0.25rem;
+      line-height: 1.5;
+    }
+
+    .module-db {
+      font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+      font-size: 0.73rem;
+      color: #9CA3AF;
+      margin-top: 0.85rem;
+      border-top: 1px solid #F3F4F6;
+      padding-top: 0.6rem;
+    }
+
+    .write-none {
+      font-size: 0.83rem;
+      color: #9CA3AF;
+      font-style: italic;
+    }
+
+    /* ── Code block ───────────────────────────────────────────── */
+    .code-wrapper {
+      background: #0E2A33;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 0.75rem;
+    }
+
+    .code-label {
+      background: #196F6B;
+      color: #E7F3F1;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      padding: 0.4rem 1rem;
+      text-transform: uppercase;
+    }
+
+    pre {
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 0;
+    }
+
+    code {
+      font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #E7F3F1;
+      line-height: 1.7;
+    }
+
+    .code-comment { color: #6EE7B7; }
+    .code-keyword { color: #93C5FD; }
+    .code-ident   { color: #FDE68A; }
+    .code-placeholder { color: #F9A8D4; }
+
+    .code-note {
+      background: #E7F3F1;
+      border-left: 3px solid #196F6B;
+      padding: 0.85rem 1.1rem;
+      border-radius: 0 6px 6px 0;
+      margin-top: 0.75rem;
+      font-size: 0.875rem;
+      color: #0E2A33;
+      line-height: 1.6;
+    }
+
+    /* ── Nav ──────────────────────────────────────────────────── */
+    .toc {
+      background: #FFFFFF;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .toc-title {
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #6B7280;
+      margin-bottom: 0.5rem;
+    }
+
+    .toc ol {
+      padding-left: 1.2rem;
+      margin: 0;
+    }
+
+    .toc li {
+      font-size: 0.875rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .toc a {
+      color: #196F6B;
+      text-decoration: none;
+    }
+
+    .toc a:hover {
+      text-decoration: underline;
+    }
+
+    /* ── Misc ─────────────────────────────────────────────────── */
+    .section-intro {
+      font-size: 0.925rem;
+      color: #4B5563;
+      margin-bottom: 1.25rem;
+      max-width: 700px;
+    }
+
+    @media (max-width: 600px) {
+      .page-header h1 { font-size: 1.35rem; }
+      .module-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Page header ──────────────────────────────────────────────────────── -->
+<header class="page-header">
+  <h1>AI Agent Interaction Lifecycle</h1>
+  <p class="subtitle">How an agent reads, queries, learns, and writes back — and which database role governs each step</p>
+</header>
+
+<main>
+
+  <!-- ── Table of contents ─────────────────────────────────────────────── -->
+  <nav class="toc" aria-label="Page sections">
+    <div class="toc-title">Sections</div>
+    <ol>
+      <li><a href="#core-principle">The Core Principle</a></li>
+      <li><a href="#lifecycle-flow">The Lifecycle Flow — 9 Steps</a></li>
+      <li><a href="#role-matrix">The Role Matrix</a></li>
+      <li><a href="#module-breakdown">Read vs Write Breakdown per Module</a></li>
+      <li><a href="#dcl-pattern">Implications for the Access Layer DCL</a></li>
+    </ol>
+  </nav>
+
+  <!-- ── Section 1: Core Principle ─────────────────────────────────────── -->
+  <section id="core-principle">
+    <h2>1. The Core Principle</h2>
+    <div class="callout callout-teal">
+      <p>An agent that can only read is not an AI-native agent — it's a fast analyst. The separation between <strong>ROLE_AGENT</strong> and <strong>ROLE_READ</strong> exists precisely so that agents can write back their interactions, learned strategies, and quality signals without those extended permissions being granted to human consumers.</p>
+    </div>
+  </section>
+
+  <!-- ── Section 2: Lifecycle Flow ─────────────────────────────────────── -->
+  <section id="lifecycle-flow">
+    <h2>2. The Lifecycle Flow</h2>
+    <p class="section-intro">
+      A complete agent interaction traverses nine steps across five modules. Steps 1–4 are read-only and require only <code>ROLE_AGENT</code> SELECT permissions. Steps 6–8 are write-back operations that require the INSERT grants exclusive to <code>ROLE_AGENT</code>.
+    </p>
+
+    <div class="flow">
+
+      <!-- Step 1 -->
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Discover the product</span>
+            <span class="badge badge-semantic">Semantic</span>
+            <span class="badge op-read">READ</span>
+          </div>
+          <div class="step-db">{Product}_Semantic</div>
+          <ul class="step-bullets">
+            <li>Query <code>{Product}_Semantic.data_product_map</code> to find deployed modules and databases.</li>
+            <li>Query <code>{Product}_Semantic.entity_metadata</code> to list all tables and their business purpose.</li>
+            <li>Query <code>{Product}_Semantic.table_relationship</code> to learn join patterns and multi-hop paths.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-connector" aria-hidden="true"></div>
+
+      <!-- Step 2 -->
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Check contract compliance</span>
+            <span class="badge badge-semantic">Semantic</span>
+            <span class="badge badge-observability">Observability</span>
+            <span class="badge op-read">READ</span>
+          </div>
+          <div class="step-db">{Product}_Semantic_V &nbsp;·&nbsp; {Product}_Observability_V</div>
+          <ul class="step-bullets">
+            <li>Query <code>{Product}_Semantic_V.contract_current_interface</code> to find contracted interfaces.</li>
+            <li>Check <code>is_compliant = 1</code> — if 0 (NON_COMPLIANT or SUSPENDED), the Access layer view returns no rows; the agent must not proceed with that interface.</li>
+            <li>Query <code>{Product}_Observability_V.contract_latest_validation</code> for current evidence.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-connector" aria-hidden="true"></div>
+
+      <!-- Step 3 -->
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Read prior memory</span>
+            <span class="badge badge-memory">Memory</span>
+            <span class="badge op-read">READ</span>
+          </div>
+          <div class="step-db">{Product}_Memory</div>
+          <ul class="step-bullets">
+            <li>Query <code>{Product}_Memory.conversation_history</code> for relevant prior interactions with this user or domain.</li>
+            <li>Query <code>{Product}_Memory.learned_strategy</code> for successful query patterns for this entity/question type.</li>
+            <li>Query <code>{Product}_Memory.query_cookbook</code> for pre-built trusted SQL templates.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-connector" aria-hidden="true"></div>
+
+      <!-- Step 4 -->
+      <div class="step-card">
+        <div class="step-number">4</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Query the contracted data</span>
+            <span class="badge badge-domain">Domain (via Access_V)</span>
+            <span class="badge op-read">READ</span>
+          </div>
+          <div class="step-db">{Product}_Access_V</div>
+          <ul class="step-bullets">
+            <li>Execute SQL against contracted views in <code>{Product}_Access_V</code> — never directly against <code>{Product}_Domain</code>.</li>
+            <li>The Access layer view enforces the publication gate (<code>EXISTS</code> subquery on <code>publication_status = 'PUBLISHED'</code>).</li>
+            <li>Uses join patterns from <code>table_relationship</code> and SQL templates from <code>query_cookbook</code>.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-connector" aria-hidden="true"></div>
+
+      <!-- Step 5 -->
+      <div class="step-card step-agent-internal">
+        <div class="step-number">5</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Process and generate the answer</span>
+            <span class="badge badge-internal">Agent-internal</span>
+            <span class="badge op-internal">No DB interaction</span>
+          </div>
+          <ul class="step-bullets">
+            <li>The agent synthesises query results with its language understanding to generate the response.</li>
+            <li>This step is entirely agent-internal — no database interaction occurs.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-connector" aria-hidden="true"></div>
+
+      <!-- Step 6 -->
+      <div class="step-card">
+        <div class="step-number">6</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Write conversation record</span>
+            <span class="badge badge-memory">Memory</span>
+            <span class="badge op-write">WRITE</span>
+          </div>
+          <div class="step-db">{Product}_Memory.conversation_history</div>
+          <ul class="step-bullets">
+            <li>INSERT into <code>{Product}_Memory.conversation_history</code> — records: session_id, agent_id, user_context, entities_queried, sql_executed, outcome.</li>
+            <li>This is why <code>ROLE_AGENT</code> requires INSERT on Memory; <code>ROLE_READ</code> (humans) does <strong>not</strong> need this permission.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-connector" aria-hidden="true"></div>
+
+      <!-- Step 7 -->
+      <div class="step-card">
+        <div class="step-number">7</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Update learned strategies</span>
+            <span class="badge badge-memory">Memory</span>
+            <span class="badge op-write">WRITE (conditional)</span>
+          </div>
+          <div class="step-db">{Product}_Memory.learned_strategy &nbsp;·&nbsp; {Product}_Memory.Design_Decision</div>
+          <ul class="step-bullets">
+            <li>If this interaction produced a novel or successful query pattern, INSERT into <code>{Product}_Memory.learned_strategy</code>.</li>
+            <li>If the agent made a design observation, INSERT into <code>{Product}_Memory.Design_Decision</code> with <code>decision_category = 'AGENT_INSIGHT'</code>.</li>
+            <li>Enables future agents (including itself in later sessions) to improve from this interaction.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-connector" aria-hidden="true"></div>
+
+      <!-- Step 8 -->
+      <div class="step-card">
+        <div class="step-number">8</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Record usage event</span>
+            <span class="badge badge-observability">Observability</span>
+            <span class="badge op-write">WRITE</span>
+          </div>
+          <div class="step-db">{Product}_Observability.telemetry_event</div>
+          <ul class="step-bullets">
+            <li>INSERT into <code>{Product}_Observability.telemetry_event</code> — records: interface consumed, query cost, row count returned, latency.</li>
+            <li>This is quality signal that feeds back into the contract validation and SLA monitoring loop.</li>
+            <li>Enables the data product team to see how agents are using the product operationally.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-connector" aria-hidden="true"></div>
+
+      <!-- Step 9 -->
+      <div class="step-card step-agent-internal">
+        <div class="step-number">9</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Return result and close session</span>
+            <span class="badge badge-internal">Agent-internal</span>
+          </div>
+          <ul class="step-bullets">
+            <li>Session state is persisted in Memory; the next interaction starts at Step 1 but with richer prior context.</li>
+            <li>The Observability write in Step 8 feeds dashboards, contract validation, and OpenTelemetry metrics.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div><!-- /.flow -->
+  </section>
+
+  <!-- ── Section 3: Role Matrix ─────────────────────────────────────────── -->
+  <section id="role-matrix">
+    <h2>3. The Role Matrix — What Each Role Can Do, and Why</h2>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Operation</th>
+            <th>ROLE_READ<br><small style="font-weight:400;opacity:0.8">(human analysts)</small></th>
+            <th>ROLE_AGENT<br><small style="font-weight:400;opacity:0.8">(AI agents)</small></th>
+            <th>ROLE_ADMIN<br><small style="font-weight:400;opacity:0.8">(product owner)</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-op">SELECT — Semantic metadata</td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+          </tr>
+          <tr>
+            <td class="td-op">SELECT — Domain (via Access_V views)</td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+          </tr>
+          <tr>
+            <td class="td-op">SELECT — Observability (quality, SLA, lineage)</td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+          </tr>
+          <tr>
+            <td class="td-op">SELECT — Memory (history, strategies, glossary)</td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+          </tr>
+          <tr>
+            <td class="td-op">SELECT — Prediction features</td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+          </tr>
+          <tr>
+            <td class="td-op">INSERT — Memory (conversations, strategies, insights)</td>
+            <td><span class="check-no">✗</span></td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+          </tr>
+          <tr>
+            <td class="td-op">INSERT — Observability (usage events, feedback)</td>
+            <td><span class="check-no">✗</span></td>
+            <td><span class="check-yes">✓</span></td>
+            <td><span class="check-yes">✓</span></td>
+          </tr>
+          <tr>
+            <td class="td-op">INSERT/UPDATE — Domain tables</td>
+            <td><span class="check-no">✗</span></td>
+            <td><span class="check-no">✗</span></td>
+            <td><span class="check-yes">✓</span></td>
+          </tr>
+          <tr>
+            <td class="td-op">INSERT/UPDATE — Semantic metadata</td>
+            <td><span class="check-no">✗</span></td>
+            <td><span class="check-no">✗</span></td>
+            <td><span class="check-yes">✓</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-amber" style="margin-top:1rem">
+      <p><strong>Why ROLE_AGENT must not write Domain or Semantic:</strong> Domain data comes from authoritative source systems via controlled ETL pipelines. Semantic metadata is maintained by data product designers. Agent write-back to these modules would undermine data governance and the integrity of the product's source of truth.</p>
+    </div>
+  </section>
+
+  <!-- ── Section 4: Module breakdown cards ─────────────────────────────── -->
+  <section id="module-breakdown">
+    <h2>4. Read vs Write Breakdown per Module</h2>
+    <p class="section-intro">Every module has a clear agent access profile. Two modules accept agent writes; four are strictly read-only for agents.</p>
+
+    <div class="module-grid">
+
+      <!-- Semantic -->
+      <div class="module-card">
+        <div class="module-card-title">
+          <span class="badge badge-semantic">Semantic</span>
+        </div>
+        <h4 class="read-heading">Agents READ:</h4>
+        <ul>
+          <li>Data product map (modules and databases)</li>
+          <li>Entity metadata (tables, business purpose)</li>
+          <li>Table relationships (join patterns, multi-hop paths)</li>
+          <li>Contract interfaces and compliance status</li>
+          <li>Business glossary terms</li>
+        </ul>
+        <h4 class="write-heading">Agents WRITE:</h4>
+        <p class="write-none">Nothing — read only. Schema is maintained by data product designers.</p>
+        <div class="module-db">{Product}_Semantic</div>
+      </div>
+
+      <!-- Domain -->
+      <div class="module-card">
+        <div class="module-card-title">
+          <span class="badge badge-domain">Domain</span>
+        </div>
+        <h4 class="read-heading">Agents READ:</h4>
+        <ul>
+          <li>All contracted data via Access_V views</li>
+          <li>Publication-gated rows only (PUBLISHED status enforced by view)</li>
+          <li>Never directly against base tables</li>
+        </ul>
+        <h4 class="write-heading">Agents WRITE:</h4>
+        <p class="write-none">Nothing — read only. Domain data originates from governed ETL pipelines.</p>
+        <div class="module-db">{Product}_Domain (via {Product}_Access_V)</div>
+      </div>
+
+      <!-- Memory -->
+      <div class="module-card">
+        <div class="module-card-title">
+          <span class="badge badge-memory">Memory</span>
+        </div>
+        <h4 class="read-heading">Agents READ:</h4>
+        <ul>
+          <li>Prior conversation history</li>
+          <li>Learned query strategies</li>
+          <li>Query cookbook templates</li>
+          <li>Design decisions (for context)</li>
+        </ul>
+        <h4 class="write-heading">Agents WRITE:</h4>
+        <ul>
+          <li>New conversation records (INSERT)</li>
+          <li>Successful query strategies (INSERT)</li>
+          <li>Agent insights as Design Decisions (INSERT)</li>
+        </ul>
+        <div class="module-db">{Product}_Memory</div>
+      </div>
+
+      <!-- Observability -->
+      <div class="module-card">
+        <div class="module-card-title">
+          <span class="badge badge-observability">Observability</span>
+        </div>
+        <h4 class="read-heading">Agents READ:</h4>
+        <ul>
+          <li>Contract validation results</li>
+          <li>SLA compliance evidence</li>
+          <li>Data lineage records</li>
+          <li>Prior usage telemetry</li>
+        </ul>
+        <h4 class="write-heading">Agents WRITE:</h4>
+        <ul>
+          <li>Usage telemetry events (INSERT)</li>
+          <li>Query cost and latency metrics (INSERT)</li>
+          <li>Quality feedback signals (INSERT)</li>
+        </ul>
+        <div class="module-db">{Product}_Observability</div>
+      </div>
+
+      <!-- Prediction -->
+      <div class="module-card">
+        <div class="module-card-title">
+          <span class="badge" style="background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;">Prediction</span>
+        </div>
+        <h4 class="read-heading">Agents READ:</h4>
+        <ul>
+          <li>Pre-computed prediction features</li>
+          <li>Model output tables</li>
+          <li>Feature definitions and lineage</li>
+        </ul>
+        <h4 class="write-heading">Agents WRITE:</h4>
+        <p class="write-none">Nothing — read only. Model training and feature engineering are governed processes.</p>
+        <div class="module-db">{Product}_Prediction</div>
+      </div>
+
+      <!-- Search -->
+      <div class="module-card">
+        <div class="module-card-title">
+          <span class="badge" style="background:#FEF9C3;color:#854D0E;border:1px solid #FDE68A;">Search</span>
+        </div>
+        <h4 class="read-heading">Agents READ:</h4>
+        <ul>
+          <li>Vector embeddings for semantic search</li>
+          <li>Full-text search indexes</li>
+          <li>Ranked retrieval results</li>
+        </ul>
+        <h4 class="write-heading">Agents WRITE:</h4>
+        <p class="write-none">Nothing — read only. Embeddings are generated by governed ingestion pipelines.</p>
+        <div class="module-db">{Product}_Search</div>
+      </div>
+
+    </div><!-- /.module-grid -->
+  </section>
+
+  <!-- ── Section 5: DCL pattern ─────────────────────────────────────────── -->
+  <section id="dcl-pattern">
+    <h2>5. Implications for the Access Layer DCL</h2>
+    <p class="section-intro">
+      The write-back grants to Memory and Observability are what separates ROLE_AGENT from ROLE_READ at the database level. This is a material permission difference — not just an audit label.
+    </p>
+
+    <div class="code-wrapper">
+      <div class="code-label">SQL — Access Layer DCL (updated pattern)</div>
+      <pre><code><span class="code-comment">-- Phase 1.5 grants — Memory and Semantic</span>
+<span class="code-comment">-- SELECT on both (same as ROLE_READ)</span>
+<span class="code-keyword">GRANT</span> <span class="code-keyword">SELECT</span> <span class="code-keyword">ON</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_Semantic</span>  <span class="code-keyword">TO</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_ROLE_AGENT</span>;
+<span class="code-keyword">GRANT</span> <span class="code-keyword">SELECT</span> <span class="code-keyword">ON</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_Memory</span>    <span class="code-keyword">TO</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_ROLE_AGENT</span>;
+
+<span class="code-comment">-- Write-back to Memory: agents record conversations, strategies, and insights</span>
+<span class="code-keyword">GRANT</span> <span class="code-keyword">INSERT</span> <span class="code-keyword">ON</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_Memory</span>    <span class="code-keyword">TO</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_ROLE_AGENT</span>;
+
+<span class="code-comment">-- Phase 2.5 grants — Domain, Observability (and all subsequent modules)</span>
+<span class="code-keyword">GRANT</span> <span class="code-keyword">SELECT</span> <span class="code-keyword">ON</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_Domain</span>        <span class="code-keyword">TO</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_ROLE_AGENT</span>;
+<span class="code-keyword">GRANT</span> <span class="code-keyword">SELECT</span> <span class="code-keyword">ON</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_Observability</span> <span class="code-keyword">TO</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_ROLE_AGENT</span>;
+
+<span class="code-comment">-- Write-back to Observability: agents record usage events and quality feedback</span>
+<span class="code-keyword">GRANT</span> <span class="code-keyword">INSERT</span> <span class="code-keyword">ON</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_Observability</span> <span class="code-keyword">TO</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_ROLE_AGENT</span>;
+
+<span class="code-comment">-- ROLE_READ gets SELECT only — no write-back</span>
+<span class="code-keyword">GRANT</span> <span class="code-keyword">SELECT</span> <span class="code-keyword">ON</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_Semantic</span>      <span class="code-keyword">TO</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_ROLE_READ</span>;
+<span class="code-keyword">GRANT</span> <span class="code-keyword">SELECT</span> <span class="code-keyword">ON</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_Memory</span>        <span class="code-keyword">TO</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_ROLE_READ</span>;
+<span class="code-keyword">GRANT</span> <span class="code-keyword">SELECT</span> <span class="code-keyword">ON</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_Domain</span>        <span class="code-keyword">TO</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_ROLE_READ</span>;
+<span class="code-keyword">GRANT</span> <span class="code-keyword">SELECT</span> <span class="code-keyword">ON</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_Observability</span> <span class="code-keyword">TO</span> <span class="code-placeholder">{ProductName}</span><span class="code-ident">_ROLE_READ</span>;</code></pre>
+    </div>
+
+    <div class="code-note">
+      The <code>INSERT</code> grants on Memory and Observability are what separates <code>ROLE_AGENT</code> from <code>ROLE_READ</code> at the database level. This is why they are kept as distinct roles — not just for audit clarity, but for materially different database permissions. <code>ROLE_READ</code> remains SELECT-only across all modules.
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>
