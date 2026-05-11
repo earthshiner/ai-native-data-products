@@ -948,29 +948,47 @@ own conforming implementation that reflects local conventions.
 
 ### 7.4 Pre-Joined Views for Agent Access
 
-    -- Create view to simplify agent queries
-    CREATE VIEW Party_Complete AS
-    SELECT
-        p.party_id, p.party_key, p.legal_name,
-        p.valid_from_dts, p.valid_to_dts,
-        ce.changed_by AS last_changed_by,
-        ce.changed_dts AS last_changed_dts,
-        ce.change_reason,
-        dl.source_system,
-        dl.batch_id,
-        dq.quality_score,
-        dq.evaluated_dts AS quality_evaluated_dts
-    FROM Party_H p
-    LEFT JOIN Observability.ChangeEvent_H ce
-        ON ce.change_event_id = p.change_event_id  -- If using FK approach
-    LEFT JOIN Observability.DataLineage_H dl
-        ON dl.lineage_id = p.lineage_id
-    LEFT JOIN Observability.DataQuality_H dq
-        ON dq.quality_id = p.quality_id
-    WHERE p.is_current = 1;
+```sql
+-- Create view to simplify agent queries
+CREATE VIEW Party_Complete
+(
+    -- View contract: agents see all returned columns without parsing the SELECT body
+    party_id,
+    party_key,
+    legal_name,
+    valid_from_dts,
+    valid_to_dts,
+    last_changed_by,
+    last_changed_dts,
+    change_reason,
+    source_system,
+    batch_id,
+    quality_score,
+    quality_evaluated_dts
+)
+AS
+SELECT 
+    p.party_id, p.party_key, p.legal_name,
+    p.valid_from_dts, p.valid_to_dts,
+    ce.changed_by AS last_changed_by,
+    ce.changed_dts AS last_changed_dts,
+    ce.change_reason,
+    dl.source_system,
+    dl.batch_id,
+    dq.quality_score,
+    dq.evaluated_dts AS quality_evaluated_dts
+FROM Party_H p
+LEFT JOIN Observability.ChangeEvent_H ce 
+    ON ce.change_event_id = p.change_event_id  -- If using FK approach
+LEFT JOIN Observability.DataLineage_H dl 
+    ON dl.lineage_id = p.lineage_id
+LEFT JOIN Observability.DataQuality_H dq 
+    ON dq.quality_id = p.quality_id
+WHERE p.is_current = 1;
 
-    -- Agent query (simple)
-    SELECT * FROM Party_Complete WHERE party_key = 'CUST-12345';
+-- Agent query (simple)
+SELECT * FROM Party_Complete WHERE party_key = 'CUST-12345';
+```
 
 ### 7.5 Advocated Approach by Scenario
 
@@ -1138,6 +1156,15 @@ own conforming implementation that reflects local conventions.
 ### 9.4 Advocated: Use Views for Agent Access
 
     CREATE VIEW Party_HighQuality AS
+    (
+    -- View contract: agents see all returned columns without parsing the SELECT body
+    party_id,
+    party_key,
+    legal_name,
+    quality_score,
+    evaluated_dts,
+    rule_results_json
+    )
     SELECT p.party_id, p.party_key, p.legal_name,
            dq.quality_score, dq.evaluated_dts,
            dq.rule_results_json
