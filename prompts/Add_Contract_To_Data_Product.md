@@ -283,11 +283,11 @@ defined in Section 10.1 of the Data Contract Design Standard:
 For each interface, confirm that the five standards export views defined in Section 12.5
 of the Data Contract Design Standard are created:
 
-- `contract_odcs_export_v` — per-interface JSON for ODCS tooling
-- `contract_dpds_port_export_v` — per-interface DPDS output port descriptor
-- `contract_dcat_dataset_export_v` — JSON-LD Dataset and Distribution records
-- `contract_lineage_context_v` — join context for OpenLineage facets (includes `datahub_dataset_urn`)
-- `contract_telemetry_context_v` — attribute values for OpenTelemetry span enrichment
+- `contract_odcs_export` — per-interface JSON for ODCS tooling
+- `contract_dpds_port_export` — per-interface DPDS output port descriptor
+- `contract_dcat_dataset_export` — JSON-LD Dataset and Distribution records
+- `contract_lineage_context` — join context for OpenLineage facets (includes `datahub_dataset_urn`)
+- `contract_telemetry_context` — attribute values for OpenTelemetry span enrichment
 
 For each view: confirm the column list matches the standard, and confirm the `datahub_dataset_urn`
 derivation pattern is correct for this product's Teradata environment.

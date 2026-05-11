@@ -995,7 +995,7 @@ The contract backbone is designed to export and import from industry-standard fo
 | `stakeholders` | `contract_stakeholder` | `stakeholder_role`, `stakeholder_name`, `stakeholder_contact`, `responsibilities` |
 | `tags` | `contract_tag` | `tag_category`, `tag_key`, `tag_value` |
 
-**Implementation:** Deploy the `contract_odcs_export_v` view (see Section 12.5) to produce a row-per-contract JSON or YAML structure consumable by ODCS tooling.
+**Implementation:** Deploy the `contract_odcs_export` view (see Section 12.5) to produce a row-per-contract JSON or YAML structure consumable by ODCS tooling.
 
 **Repository artefact:** `/contracts/{interface_name}.odcs.yaml` — see Section 11.
 
@@ -1021,7 +1021,7 @@ The contract backbone is designed to export and import from industry-standard fo
 | `expectations` | `contract_rule` | Usage patterns and quality expectations communicated to consumers |
 | `fullyQualifiedName` (URN) | `contract_interface` | Derived as `urn:li:dataProduct:{product_name}:{interface_name}:{version_number}` — see URN pattern in §10.5 |
 
-**Implementation:** Deploy the `contract_dpds_port_export_v` view to shape each contracted interface as a DPDS output port descriptor.
+**Implementation:** Deploy the `contract_dpds_port_export` view to shape each contracted interface as a DPDS output port descriptor.
 
 **Repository artefact:** `/dpds/product.dpds.yaml`.
 
@@ -1064,7 +1064,7 @@ The contract backbone is designed to export and import from industry-standard fo
 | `dcat:theme` | `contract_tag` | `tag_value` where `tag_category = 'THEME'` — thematic category URIs |
 | `dcat:keyword` | `contract_tag` | `tag_value` where `tag_category IN ('DOMAIN', 'SUBJECT_AREA')` |
 
-**Implementation:** Deploy `contract_dcat_dataset_export_v` to produce JSON-LD output for publication to open data portals or DCAT-compatible catalogues.
+**Implementation:** Deploy `contract_dcat_dataset_export` to produce JSON-LD output for publication to open data portals or DCAT-compatible catalogues.
 
 **Repository artefact:** `/catalog/dcat-export.jsonld`.
 
@@ -1107,7 +1107,7 @@ Where:
 
 Example: `urn:li:dataset:(urn:li:dataPlatform:teradata,customer360_access_v.customer_current,PRODUCTION)`
 
-The `contract_lineage_context_v` view (Section 12.5) includes `datahub_dataset_urn` as a derived column to simplify publisher integration.
+The `contract_lineage_context` view (Section 12.5) includes `datahub_dataset_urn` as a derived column to simplify publisher integration.
 
 **`rawContract` field:**
 
@@ -1846,16 +1846,16 @@ WHERE cs.signoff_status IN ('PENDING', 'APPROVED', 'REJECTED')
 
 | View Name | Target Standard |
 |-----------|----------------|
-| `contract_odcs_export_v` | ODCS — produces a per-interface JSON structure mapping to the ODCS specification |
-| `contract_dpds_port_export_v` | DPDS — shapes each interface as a DPDS output port descriptor |
-| `contract_dcat_dataset_export_v` | DCAT — produces JSON-LD Dataset and Distribution records |
-| `contract_lineage_context_v` | OpenLineage — provides the join context needed to add contract facets to lineage events |
-| `contract_telemetry_context_v` | OpenTelemetry — provides the contract attribute values for telemetry span enrichment |
+| `contract_odcs_export` | ODCS — produces a per-interface JSON structure mapping to the ODCS specification |
+| `contract_dpds_port_export` | DPDS — shapes each interface as a DPDS output port descriptor |
+| `contract_dcat_dataset_export` | DCAT — produces JSON-LD Dataset and Distribution records |
+| `contract_lineage_context` | OpenLineage — provides the join context needed to add contract facets to lineage events |
+| `contract_telemetry_context` | OpenTelemetry — provides the contract attribute values for telemetry span enrichment |
 
-**`contract_lineage_context_v`:**
+**`contract_lineage_context`:**
 
 ```sql
-REPLACE VIEW {Product}_Semantic_V.contract_lineage_context_v
+REPLACE VIEW {Product}_Semantic_V.contract_lineage_context
 (
      contract_key
     ,interface_name
@@ -1905,10 +1905,10 @@ WHERE c.is_active = 1
 ;
 ```
 
-**`contract_telemetry_context_v`:**
+**`contract_telemetry_context`:**
 
 ```sql
-REPLACE VIEW {Product}_Semantic_V.contract_telemetry_context_v
+REPLACE VIEW {Product}_Semantic_V.contract_telemetry_context
 (
      contract_key
     ,contract_version

@@ -199,7 +199,7 @@ If you are a registered consumer, consume the contract version recorded in
 **4. Use the lineage context view for auditable consumption**
 
 When your consumption of the interface will be recorded in a lineage system,
-join your query result to `contract_lineage_context_v` to attach the contract
+join your query result to `contract_lineage_context` to attach the contract
 version and validation status to your lineage event:
 
 ```sql
@@ -210,7 +210,7 @@ SELECT
     ,lc.validation_run_status
     ,lc.is_compliant
     ,lc.datahub_dataset_urn
-FROM {Product}_Semantic_V.contract_lineage_context_v AS lc
+FROM {Product}_Semantic_V.contract_lineage_context AS lc
 WHERE lc.interface_name = '{interface_name}'
 ;
 ```
@@ -288,7 +288,7 @@ This fragment adds Tiers 4–7 to the existing Tiers 1–3 (module map, entity m
 relationships).
 
 **OpenTelemetry span enrichment:**
-When the agent is executing inside an instrumented pipeline, the `contract_telemetry_context_v`
+When the agent is executing inside an instrumented pipeline, the `contract_telemetry_context`
 view provides the standard OpenTelemetry span attributes. These should be added to any
 span that touches a contracted interface:
 
@@ -299,7 +299,7 @@ SELECT
     ,is_compliant         AS "data_product.contract.is_compliant"
     ,publication_status   AS "data_product.interface.publication_status"
     ,consumer_count       AS "data_product.contract.consumer_count"
-FROM {Product}_Semantic_V.contract_telemetry_context_v
+FROM {Product}_Semantic_V.contract_telemetry_context
 WHERE interface_name = '{interface_name}'
 ;
 ```
