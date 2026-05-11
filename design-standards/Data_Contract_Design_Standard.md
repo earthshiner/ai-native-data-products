@@ -168,6 +168,8 @@ Top-level contract identity record. One row per contract.
 | `is_active` | BYTEINT NOT NULL DEFAULT 1 | Soft-delete indicator |
 | `created_at` | TIMESTAMP(6) WITH TIME ZONE | Record creation timestamp |
 | `updated_at` | TIMESTAMP(6) WITH TIME ZONE | Record last-update timestamp |
+| `license_uri` | VARCHAR(500) | URI of the applicable data licence (e.g., `https://creativecommons.org/licenses/by/4.0/`). Maps to `dct:license` in DCAT. NULL for internal-only products. |
+| `odcs_artefact_path` | VARCHAR(500) | Relative path to the ODCS YAML artefact in the product repository (e.g., `/contracts/customer_current.odcs.yaml`). Used by DataHub `rawContract` and other tooling that needs the serialised contract document. |
 
 #### 4.1.2 `contract_version`
 
@@ -200,10 +202,12 @@ The contracted view, table, or endpoint. One row per interface per contract vers
 | `contract_interface_id` | INTEGER IDENTITY | Surrogate key |
 | `contract_version_id` | INTEGER NOT NULL | FK → `contract_version.contract_version_id` |
 | `interface_name` | VARCHAR(200) NOT NULL | Logical name of the interface (e.g., `customer_current`) |
-| `interface_type` | VARCHAR(50) NOT NULL | `VIEW`, `TABLE`, `FEATURE_SET`, `PREDICTION_OUTPUT`, `SEARCH_ENDPOINT` |
+| `interface_type` | VARCHAR(50) NOT NULL | `VIEW`, `TABLE`, `FEATURE_SET`, `PREDICTION_OUTPUT`, `SEARCH_ENDPOINT`, `INPUT_PORT`, `DISCOVERY_PORT`, `OBSERVABILITY_PORT`, `CONTROL_PORT` — last four are DPDS port types; INPUT_PORT records where data enters the product. |
+| `interface_description` | VARCHAR(2000) | Human-readable description of what this interface provides and to whom. Required for DPDS port descriptors. |
 | `database_name` | VARCHAR(128) NOT NULL | Physical Teradata database containing the object |
 | `object_name` | VARCHAR(128) NOT NULL | Physical view or table name |
 | `refresh_frequency` | VARCHAR(50) | How often data is refreshed (e.g., `15MIN`, `DAILY`, `NEAR_REAL_TIME`) |
+| `refresh_frequency_uri` | VARCHAR(200) | Standard vocabulary URI for update frequency. Binds `refresh_frequency` to a controlled vocabulary for DCAT `dct:accrualPeriodicity` (e.g., `http://purl.org/cld/freq/daily`, `http://purl.org/cld/freq/continuous`). |
 | `freshness_sla_minutes` | INTEGER | Maximum acceptable age of data in minutes |
 | `availability_sla_pct` | DECIMAL(5,2) | Minimum availability percentage (e.g., `99.5`) |
 | `validation_status` | VARCHAR(20) NOT NULL DEFAULT 'UNKNOWN' | `PASSING`, `FAILING`, `WARNING`, `UNKNOWN` — updated by last validation run |
@@ -276,6 +280,62 @@ Registered consumers of a contracted interface. One row per consumer per contrac
 | `signoff_status` | VARCHAR(20) NOT NULL DEFAULT 'NOT_REQUIRED' | `NOT_REQUIRED`, `PENDING`, `APPROVED`, `REJECTED` |
 | `registered_dt` | DATE NOT NULL | Date consumer was registered |
 | `deregistered_dt` | DATE | Date consumer was removed from this version |
+| `created_at` | TIMESTAMP(6) WITH TIME ZONE | Record creation timestamp |
+
+---
+
+#### 4.1.7 `contract_server`
+
+Connection and environment information for a contracted interface. One row per server per interface. Maps to the ODCS `server` section and DPDS `serverInfo`.
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `contract_server_id` | INTEGER IDENTITY | Surrogate key |
+| `contract_interface_id` | INTEGER NOT NULL | FK → `contract_interface.contract_interface_id` |
+| `server_id` | VARCHAR(100) NOT NULL | Logical server identifier (e.g., `prd-teradata`, `dev-teradata`) |
+| `environment` | VARCHAR(50) NOT NULL | `PRODUCTION`, `TEST`, `DEVELOPMENT` |
+| `server_type` | VARCHAR(50) NOT NULL | `TERADATA`, `API`, `JDBC`, `S3`, `KAFKA` — type of connection |
+| `host` | VARCHAR(500) | Hostname or endpoint. NULL for serverless or catalogue-only entries. |
+| `port` | INTEGER | Port number (e.g., `1025` for Teradata). |
+| `database_name_override` | VARCHAR(128) | Override database name if different from `contract_interface.database_name` for this environment. |
+| `schema_name` | VARCHAR(128) | Schema or namespace (used for non-Teradata platforms). |
+| `description` | VARCHAR(500) | Free-text notes (e.g., connection pool, failover, VPN requirement). |
+| `is_active` | BYTEINT NOT NULL DEFAULT 1 | Soft-delete indicator |
+| `created_at` | TIMESTAMP(6) WITH TIME ZONE | Record creation timestamp |
+
+---
+
+#### 4.1.8 `contract_stakeholder`
+
+Role-based contacts for a contract. One row per stakeholder per contract. Maps to the ODCS `stakeholders` section. Supports multi-role ownership beyond the single `owner_name` on `contract`.
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `contract_stakeholder_id` | INTEGER IDENTITY | Surrogate key |
+| `contract_id` | INTEGER NOT NULL | FK → `contract.contract_id` |
+| `stakeholder_role` | VARCHAR(50) NOT NULL | `OWNER`, `STEWARD`, `SUPPORT`, `ARCHITECT`, `SUBJECT_MATTER_EXPERT`, `APPROVER`, `CONSUMER_LIAISON` |
+| `stakeholder_name` | VARCHAR(200) NOT NULL | Name of the individual or team |
+| `stakeholder_contact` | VARCHAR(200) NOT NULL | Email address or team channel |
+| `responsibilities` | VARCHAR(1000) | Specific responsibilities of this stakeholder for this contract |
+| `notification_channel` | VARCHAR(200) | Preferred notification channel (Slack, Teams, email). Overrides contract-level channel for this role. |
+| `is_active` | BYTEINT NOT NULL DEFAULT 1 | Soft-delete indicator |
+| `created_at` | TIMESTAMP(6) WITH TIME ZONE | Record creation timestamp |
+
+---
+
+#### 4.1.9 `contract_tag`
+
+Free-form categorical labels for contracts and interfaces. One row per tag. Maps to the ODCS `tags` section, DCAT `dcat:theme`, and general catalogue classification.
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `contract_tag_id` | INTEGER IDENTITY | Surrogate key |
+| `contract_id` | INTEGER NOT NULL | FK → `contract.contract_id` |
+| `contract_interface_id` | INTEGER | FK → `contract_interface.contract_interface_id`. NULL = tag applies to the whole contract. |
+| `tag_category` | VARCHAR(100) NOT NULL | Category of tag: `DOMAIN` (business domain), `REGULATORY` (compliance framework), `THEME` (DCAT theme URI), `SUBJECT_AREA`, `CUSTOM` |
+| `tag_key` | VARCHAR(100) NOT NULL | Tag key (e.g., `domain`, `regulation`, `theme_uri`) |
+| `tag_value` | VARCHAR(500) NOT NULL | Tag value (e.g., `retail-banking`, `APRA-CPG235`, `http://eurovoc.europa.eu/100142`) |
+| `is_active` | BYTEINT NOT NULL DEFAULT 1 | Soft-delete indicator |
 | `created_at` | TIMESTAMP(6) WITH TIME ZONE | Record creation timestamp |
 
 ---
@@ -433,6 +493,7 @@ Every `contract_rule` row must carry a `rule_sub_type` drawn from the following 
 | `FRESHNESS_MAX_AGE` | `FRESHNESS` | Data is not older than `contract_interface.freshness_sla_minutes`. | `MINUTES` | `CRITICAL` | Yes |
 | `SCHEMA_VALIDATION` | `SCHEMA` | Physical schema of the interface matches the contracted column list, types, and nullability in `contract_field`. Checks for removed columns, type changes, and added NOT NULL constraints. | — | `CRITICAL` | Yes |
 | `AVAILABILITY` | `SLA` | Interface responded within `contract_interface.availability_sla_pct` of attempts. | `PERCENT` | `HIGH` | Yes |
+| `SQL_ASSERTION` | `QUALITY` | A custom SQL expression that must return TRUE (or non-zero) to pass. The full SQL is stored in `rule_logic`. Maps to DataHub `SqlAssertion` and OpenMetadata custom SQL tests. | — | `HIGH` | No (advisory by default; promote to CRITICAL for blocking use) |
 
 #### 4.4.2 How `rule_type` and `rule_sub_type` Relate
 
@@ -620,24 +681,30 @@ Every view in `{Product}_Access_V` that exposes a contracted interface must incl
 Pattern (Teradata SQL):
 
 ```sql
-replace view customer360_access_v.customer_current
-as
-locking row for access
-select
+REPLACE VIEW customer360_access_v.customer_current
+(
+     customer_id
+    ,customer_name
+    ,customer_status_cd
+    ,last_updated_dts
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
      d.customer_id
     ,d.customer_name
     ,d.customer_status_cd
     ,d.last_updated_dts
-from customer360_domain.customer_current_h as d
-where d.is_current_ind = 1
-  and exists (
+FROM customer360_domain.customer_current_h AS d
+WHERE d.is_current_ind = 1
+  AND EXISTS (
     -- Publication gate: only serve data when contract is PUBLISHED
-    select 1
-    from customer360_semantic.contract_interface as ci
-    where ci.database_name   = 'customer360_access_v'
-      and ci.object_name     = 'customer_current'
-      and ci.publication_status = 'PUBLISHED'
-      and ci.is_active       = 1
+    SELECT 1
+    FROM customer360_semantic.contract_interface AS ci
+    WHERE ci.database_name      = 'customer360_access_v'
+      AND ci.object_name        = 'customer_current'
+      AND ci.publication_status = 'PUBLISHED'
+      AND ci.is_active          = 1
 )
 ;
 ```
@@ -924,6 +991,9 @@ The contract backbone is designed to export and import from industry-standard fo
 | `quality` (validation rules) | `contract_rule` | `rule_name`, `rule_type`, `rule_logic`, `threshold_value`, `rule_severity` |
 | `sla` (service levels) | `contract_interface` | `freshness_sla_minutes`, `availability_sla_pct` |
 | `consumers` | `contract_consumer` | `consumer_name`, `consumer_purpose`, `data_classification_access` |
+| `server` (connection info) | `contract_server` | `server_id`, `environment`, `server_type`, `host`, `port`, `database_name_override` |
+| `stakeholders` | `contract_stakeholder` | `stakeholder_role`, `stakeholder_name`, `stakeholder_contact`, `responsibilities` |
+| `tags` | `contract_tag` | `tag_category`, `tag_key`, `tag_value` |
 
 **Implementation:** Deploy the `contract_odcs_export_v` view (see Section 12.5) to produce a row-per-contract JSON or YAML structure consumable by ODCS tooling.
 
@@ -939,11 +1009,17 @@ The contract backbone is designed to export and import from industry-standard fo
 
 **Source tables:**
 
-| DPDS Section | Source Table | Key Fields |
-|-------------|--------------|------------|
-| `outputPorts` | `contract_interface` | `interface_name`, `interface_type`, `database_name`, `object_name`, `refresh_frequency` |
+| DPDS Port Type | Source Table | Key Fields |
+|----------------|--------------|------------|
+| `outputPorts` | `contract_interface` (where `interface_type` IN `VIEW`, `TABLE`, `FEATURE_SET`, `PREDICTION_OUTPUT`, `SEARCH_ENDPOINT`) | `interface_name`, `interface_description`, `interface_type`, `database_name`, `object_name`, `refresh_frequency` |
+| `inputPorts` | `contract_interface` (where `interface_type = 'INPUT_PORT'`) | Source system identity, ingestion pattern, format |
+| `discoveryPorts` | `contract_interface` (where `interface_type = 'DISCOVERY_PORT'`) | Catalogue endpoint, search index location |
+| `observabilityPorts` | `contract_interface` (where `interface_type = 'OBSERVABILITY_PORT'`) | Health endpoint, metrics endpoint |
+| `controlPorts` | `contract_interface` (where `interface_type = 'CONTROL_PORT'`) | Versioning API, deprecation management endpoint |
 | `promises` | `contract_version` | `version_number`, `compatibility_level`, `effective_from_dt` |
-| `contracts` | `contract`, `contract_rule` | Quality and SLA promises per port |
+| `obligations` | `contract_consumer` | `consumer_purpose`, `data_classification_access` — consumer's obligations under the contract |
+| `expectations` | `contract_rule` | Usage patterns and quality expectations communicated to consumers |
+| `fullyQualifiedName` (URN) | `contract_interface` | Derived as `urn:li:dataProduct:{product_name}:{interface_name}:{version_number}` — see URN pattern in §10.5 |
 
 **Implementation:** Deploy the `contract_dpds_port_export_v` view to shape each contracted interface as a DPDS output port descriptor.
 
@@ -983,6 +1059,10 @@ The contract backbone is designed to export and import from industry-standard fo
 | `dcat:Distribution` | `contract_interface` | `object_name`, `database_name`, `interface_type` |
 | `dcat:keyword` | `contract_field` | `data_classification` for tagging |
 | `dct:publisher` | `contract` | `owner_name`, `owner_contact` |
+| `dct:license` | `contract` | `license_uri` — URI of the applicable licence |
+| `dct:accrualPeriodicity` | `contract_interface` | `refresh_frequency_uri` — standard Dublin Core frequency vocabulary URI |
+| `dcat:theme` | `contract_tag` | `tag_value` where `tag_category = 'THEME'` — thematic category URIs |
+| `dcat:keyword` | `contract_tag` | `tag_value` where `tag_category IN ('DOMAIN', 'SUBJECT_AREA')` |
 
 **Implementation:** Deploy `contract_dcat_dataset_export_v` to produce JSON-LD output for publication to open data portals or DCAT-compatible catalogues.
 
@@ -1012,6 +1092,26 @@ The contract backbone is designed to export and import from industry-standard fo
 |---------------|-------------|
 | Consumer registration via DataHub subscription | `contract_consumer` |
 | Assertion status updates | `contract_interface.validation_status` |
+
+**Dataset URN Derivation:**
+
+DataHub identifies datasets by a URN of the form:
+```
+urn:li:dataset:(urn:li:dataPlatform:teradata,{database_name}.{object_name},{environment})
+```
+
+Where:
+- `database_name` = `contract_interface.database_name`
+- `object_name` = `contract_interface.object_name`
+- `environment` = `contract_server.environment` (PRODUCTION / TEST / DEVELOPMENT)
+
+Example: `urn:li:dataset:(urn:li:dataPlatform:teradata,customer360_access_v.customer_current,PRODUCTION)`
+
+The `contract_lineage_context_v` view (Section 12.5) includes `datahub_dataset_urn` as a derived column to simplify publisher integration.
+
+**`rawContract` field:**
+
+DataHub can store the serialised ODCS YAML document against the contract entity. The `contract.odcs_artefact_path` column records where the ODCS file lives in the product repository, enabling the DataHub publisher to read and attach it as `rawContract`.
 
 **Repository artefact:** `/catalog/datahub-publish.yaml`.
 
@@ -1060,6 +1160,33 @@ The contract backbone is designed to export and import from industry-standard fo
 
 **Implementation:** Extend the OpenLineage RunEvent generation query in the Observability Module Design Standard (Section 5.1.3) to include contract facets via a join to `contract_interface` on `target_database` + `target_table`.
 
+**Standard Facet Mappings:**
+
+OpenLineage defines built-in facets that should be used in preference to custom facets where the data fits.
+
+**`DataQualityAssertionsFacet`** — populate from `contract_validation_result`:
+
+```
+assertions[].assertion    ← contract_rule.rule_name
+assertions[].success      ← (contract_validation_result.result_status = 'PASS')
+assertions[].column       ← contract_field.field_name (NULL for table-level rules)
+assertions[].severity     ← CASE WHEN contract_rule.rule_severity = 'CRITICAL' THEN 'error' ELSE 'warn' END
+assertions[].description  ← contract_rule.rule_description
+assertions[].actual       ← CAST(contract_validation_result.measured_value AS VARCHAR)
+```
+
+**`DataQualityMetricsFacet`** — populate from `contract_validation_result` rows for standard metric sub-types:
+
+```
+rowCount          ← measured_value WHERE rule_sub_type = 'ROW_COUNT_MIN'
+columnMetrics[field_name].nullCount     ← measured_value WHERE rule_sub_type = 'NULL_RATE_MAX' (convert proportion to count)
+columnMetrics[field_name].distinctCount ← measured_value WHERE rule_sub_type = 'UNIQUENESS'
+columnMetrics[field_name].min           ← measured_value WHERE rule_sub_type = 'VALUE_RANGE' and threshold_operator = '>='
+columnMetrics[field_name].max           ← measured_value WHERE rule_sub_type = 'VALUE_RANGE' and threshold_operator = '<='
+```
+
+**`ColumnLineageFacet`** — field-level lineage between contracted interfaces. This facet is populated when `contract_field` rows from a target interface can be traced to source fields in upstream contracted interfaces via the Observability module's `data_lineage` table. Full column-level lineage is an advanced implementation concern; document the source-to-target field mapping in `contract_field.field_description` until column-level lineage tracing is implemented.
+
 **Repository artefact:** `/lineage/openlineage-mappings.yaml` — documents the facet schema and join conditions.
 
 ---
@@ -1081,6 +1208,43 @@ The following attributes must be added to any OpenTelemetry span or metric that 
 | `data_product.contract.rule_id` | string | `contract_rule.rule_name` | `customer_id_not_null` |
 | `data_product.contract.rule_severity` | string | `contract_rule.rule_severity` | `CRITICAL` |
 | `data_product.contract.validation_status` | string | `contract_validation_run.run_status` | `PASS` |
+
+**Missing attributes (add to the standard attribute set):**
+
+| Attribute Name | Type | Source | Example |
+|----------------|------|--------|---------|
+| `data_product.contract.consumer_count` | int | `COUNT(*) FROM contract_consumer WHERE contract_interface_id = ?` | `12` |
+| `data_product.contract.is_compliant` | boolean | `contract_interface.is_compliant` | `true` |
+| `data_product.interface.publication_status` | string | `contract_interface.publication_status` | `PUBLISHED` |
+| `db.system.name` | string | Always `teradata` for Teradata-native products | `teradata` |
+
+**Resource vs Span Attribute Distinction:**
+
+OpenTelemetry separates *resource attributes* (static properties of the service emitting telemetry) from *span attributes* (dynamic properties of an individual operation). Apply the contract attributes as follows:
+
+| Attribute | Classification | Rationale |
+|-----------|---------------|-----------|
+| `data_product.contract.id` | Span | Changes per operation (different contracts per pipeline step) |
+| `data_product.contract.version` | Span | Changes as contracts are versioned |
+| `data_product.contract.rule_id` | Span | Specific to each validation step |
+| `data_product.contract.rule_severity` | Span | Specific to each rule being evaluated |
+| `data_product.contract.validation_status` | Span | Result of this specific run |
+| `data_product.contract.consumer_count` | Resource | Stable property of the product/interface |
+| `data_product.contract.is_compliant` | Resource | Current compliance state of the interface |
+| `data_product.interface.publication_status` | Resource | Current state of the interface |
+| `db.system.name` | Resource | Always `teradata` for Teradata pipelines |
+
+**Standard Metric Definitions:**
+
+Define the following OpenTelemetry metrics for contract observability. All metrics carry `data_product.contract.id` and `data_product.contract.version` as dimensions.
+
+| Metric Name | Instrument | Unit | Description |
+|-------------|-----------|------|-------------|
+| `contract.validation.duration` | Histogram | `ms` | Duration of a complete contract validation cycle |
+| `contract.violations.active` | Gauge | `{violations}` | Count of open (unresolved) violations — split by `rule_severity` dimension |
+| `contract.sla.freshness_lag` | Gauge | `min` | Minutes since last successful data refresh for this interface |
+| `contract.rules.pass_rate` | Gauge | `1` (ratio) | Proportion of rules that passed in the last validation cycle (0.0–1.0) |
+| `contract.consumers.registered` | Gauge | `{consumers}` | Count of active registered consumers for this interface |
 
 **Repository artefact:** `/telemetry/opentelemetry-attributes.yaml` — documents the full attribute schema with descriptions and example values.
 
@@ -1141,18 +1305,44 @@ Views in the Discovery and Consumer groups are deployed to the `{Product}_Semant
 **Example — `contract_current_interface`:**
 
 ```sql
-REPLACE VIEW {Product}_Semantic_V.contract_current_interface AS
+REPLACE VIEW {Product}_Semantic_V.contract_current_interface
+(
+     contract_key
+    ,contract_name
+    ,owner_name
+    ,license_uri
+    ,version_number
+    ,interface_name
+    ,interface_description
+    ,interface_type
+    ,database_name
+    ,object_name
+    ,refresh_frequency
+    ,refresh_frequency_uri
+    ,freshness_sla_minutes
+    ,availability_sla_pct
+    ,validation_status
+    ,publication_status
+    ,publication_gate_mode
+    ,non_compliant_since_dts
+    ,last_validated_dts
+    ,is_compliant
+)
+AS
 LOCKING ROW FOR ACCESS
 SELECT
      c.contract_key
     ,c.contract_name
     ,c.owner_name
+    ,c.license_uri
     ,cv.version_number
     ,ci.interface_name
+    ,ci.interface_description
     ,ci.interface_type
     ,ci.database_name
     ,ci.object_name
     ,ci.refresh_frequency
+    ,ci.refresh_frequency_uri
     ,ci.freshness_sla_minutes
     ,ci.availability_sla_pct
     ,ci.validation_status
@@ -1160,25 +1350,161 @@ SELECT
     ,ci.publication_gate_mode
     ,ci.non_compliant_since_dts
     ,ci.last_validated_dts
-    -- Simplified boolean for tools and consumers that expect a single compliance flag.
-    -- is_compliant = 1 means the interface is PUBLISHED and serving data normally.
-    -- is_compliant = 0 covers NON_COMPLIANT, SUSPENDED, and UNPUBLISHED states.
-    -- Use publication_status directly when the reason for non-compliance matters.
     ,CASE WHEN ci.publication_status = 'PUBLISHED' THEN 1 ELSE 0 END AS is_compliant
-FROM
-    {Product}_Semantic.contract AS c
+FROM {Product}_Semantic.contract AS c
 INNER JOIN {Product}_Semantic.contract_version AS cv
     ON cv.contract_id = c.contract_id
    AND cv.version_status = 'ACTIVE'
 INNER JOIN {Product}_Semantic.contract_interface AS ci
     ON ci.contract_version_id = cv.contract_version_id
    AND ci.is_active = 1
-WHERE
-    c.is_active = 1
+WHERE c.is_active = 1
 ;
 ```
 
 > **`is_compliant` vs `publication_status`:** `is_compliant` is a convenience alias — it is `1` when `publication_status = 'PUBLISHED'` and `0` for all other states (`NON_COMPLIANT`, `SUSPENDED`, `UNPUBLISHED`). External tools and catalogue publishers that expect a boolean compliance flag should read `is_compliant`. Internal pipeline logic and dashboards that need to distinguish *why* an interface is non-compliant should read `publication_status` directly.
+
+**`contract_current`:**
+
+```sql
+REPLACE VIEW {Product}_Semantic_V.contract_current
+(
+     contract_key
+    ,contract_name
+    ,contract_description
+    ,product_name
+    ,owner_name
+    ,owner_contact
+    ,license_uri
+    ,odcs_artefact_path
+    ,contract_status
+    ,version_number
+    ,version_status
+    ,effective_from_dt
+    ,effective_to_dt
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key
+    ,c.contract_name
+    ,c.contract_description
+    ,c.product_name
+    ,c.owner_name
+    ,c.owner_contact
+    ,c.license_uri
+    ,c.odcs_artefact_path
+    ,c.contract_status
+    ,cv.version_number
+    ,cv.version_status
+    ,cv.effective_from_dt
+    ,cv.effective_to_dt
+FROM {Product}_Semantic.contract AS c
+INNER JOIN {Product}_Semantic.contract_version AS cv
+    ON cv.contract_id = c.contract_id
+   AND cv.version_status = 'ACTIVE'
+WHERE c.is_active = 1
+;
+```
+
+**`contract_current_field`:**
+
+```sql
+REPLACE VIEW {Product}_Semantic_V.contract_current_field
+(
+     contract_key
+    ,interface_name
+    ,field_name
+    ,field_description
+    ,data_type
+    ,is_nullable
+    ,data_classification
+    ,is_pii
+    ,is_sensitive
+    ,breaking_change_rule
+    ,allowed_values_json
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key
+    ,ci.interface_name
+    ,cf.field_name
+    ,cf.field_description
+    ,cf.data_type
+    ,cf.is_nullable
+    ,cf.data_classification
+    ,cf.is_pii
+    ,cf.is_sensitive
+    ,cf.breaking_change_rule
+    ,cf.allowed_values_json
+FROM {Product}_Semantic.contract AS c
+INNER JOIN {Product}_Semantic.contract_version AS cv
+    ON cv.contract_id = c.contract_id
+   AND cv.version_status = 'ACTIVE'
+INNER JOIN {Product}_Semantic.contract_interface AS ci
+    ON ci.contract_version_id = cv.contract_version_id
+   AND ci.is_active = 1
+INNER JOIN {Product}_Semantic.contract_field AS cf
+    ON cf.contract_interface_id = ci.contract_interface_id
+   AND cf.is_active = 1
+WHERE c.is_active = 1
+;
+```
+
+**`contract_current_rule`:**
+
+```sql
+REPLACE VIEW {Product}_Semantic_V.contract_current_rule
+(
+     contract_key
+    ,interface_name
+    ,field_name
+    ,rule_name
+    ,rule_type
+    ,rule_sub_type
+    ,rule_description
+    ,rule_severity
+    ,threshold_value
+    ,threshold_operator
+    ,threshold_unit
+    ,is_enforced
+    ,gates_publication
+    ,rule_logic
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key
+    ,ci.interface_name
+    ,cf.field_name
+    ,cr.rule_name
+    ,cr.rule_type
+    ,cr.rule_sub_type
+    ,cr.rule_description
+    ,cr.rule_severity
+    ,cr.threshold_value
+    ,cr.threshold_operator
+    ,cr.threshold_unit
+    ,cr.is_enforced
+    ,cr.gates_publication
+    ,cr.rule_logic
+FROM {Product}_Semantic.contract AS c
+INNER JOIN {Product}_Semantic.contract_version AS cv
+    ON cv.contract_id = c.contract_id
+   AND cv.version_status = 'ACTIVE'
+INNER JOIN {Product}_Semantic.contract_interface AS ci
+    ON ci.contract_version_id = cv.contract_version_id
+   AND ci.is_active = 1
+INNER JOIN {Product}_Semantic.contract_rule AS cr
+    ON cr.contract_interface_id = ci.contract_interface_id
+   AND cr.is_active = 1
+LEFT OUTER JOIN {Product}_Semantic.contract_field AS cf
+    ON cf.contract_field_id = cr.contract_field_id
+   AND cf.is_active = 1
+WHERE c.is_active = 1
+;
+```
 
 ---
 
@@ -1193,6 +1519,97 @@ WHERE
 | `contract_violation_summary` | Open violations grouped by severity and consumer impact — incident management input |
 | `contract_sla_status` | Current SLA status per interface — freshness and timeliness at a glance |
 
+**`contract_latest_validation`:**
+
+```sql
+REPLACE VIEW {Product}_Observability_V.contract_latest_validation
+(
+     contract_key
+    ,interface_name
+    ,run_status
+    ,rules_total
+    ,rules_passed
+    ,rules_failed
+    ,rules_warned
+    ,run_started_dts
+    ,run_completed_dts
+    ,triggered_by
+    ,is_compliant
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key
+    ,ci.interface_name
+    ,vr.run_status
+    ,vr.rules_total
+    ,vr.rules_passed
+    ,vr.rules_failed
+    ,vr.rules_warned
+    ,vr.run_started_dts
+    ,vr.run_completed_dts
+    ,vr.triggered_by
+    ,CASE WHEN ci.publication_status = 'PUBLISHED' THEN 1 ELSE 0 END AS is_compliant
+FROM {Product}_Semantic.contract_interface AS ci
+INNER JOIN {Product}_Semantic.contract_version AS cv
+    ON cv.contract_version_id = ci.contract_version_id
+   AND cv.version_status = 'ACTIVE'
+INNER JOIN {Product}_Semantic.contract AS c
+    ON c.contract_id = cv.contract_id
+   AND c.is_active = 1
+INNER JOIN {Product}_Observability.contract_validation_run AS vr
+    ON vr.contract_interface_id = ci.contract_interface_id
+   AND vr.validation_run_id = (
+       SELECT MAX(vr2.validation_run_id)
+       FROM {Product}_Observability.contract_validation_run AS vr2
+       WHERE vr2.contract_interface_id = ci.contract_interface_id
+   )
+WHERE ci.is_active = 1
+;
+```
+
+**`contract_violation_summary`:**
+
+```sql
+REPLACE VIEW {Product}_Observability_V.contract_violation_summary
+(
+     contract_key
+    ,interface_name
+    ,violation_type
+    ,rule_name
+    ,rule_severity
+    ,violation_message
+    ,affected_consumer_count
+    ,detected_dts
+    ,remediation_status
+    ,remediation_owner
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key
+    ,ci.interface_name
+    ,cv2.violation_type
+    ,cv2.rule_name
+    ,cv2.violation_severity
+    ,cv2.violation_message
+    ,cv2.affected_consumer_count
+    ,cv2.detected_dts
+    ,cv2.remediation_status
+    ,cv2.remediation_owner
+FROM {Product}_Observability.contract_violation AS cv2
+INNER JOIN {Product}_Semantic.contract_interface AS ci
+    ON ci.contract_interface_id = cv2.contract_interface_id
+   AND ci.is_active = 1
+INNER JOIN {Product}_Semantic.contract_version AS cv_v
+    ON cv_v.contract_version_id = ci.contract_version_id
+INNER JOIN {Product}_Semantic.contract AS c
+    ON c.contract_id = cv_v.contract_id
+   AND c.is_active = 1
+WHERE cv2.remediation_status = 'OPEN'
+;
+```
+
 ---
 
 ### 12.3 Consumer Impact Views — `{Product}_Observability_V`
@@ -1205,6 +1622,134 @@ WHERE
 | `contract_consumer_impact` | Open violations joined to registered consumers — identifies who needs to be notified and at what severity |
 | `contract_deprecated_consumer` | Consumers still registered against a `DEPRECATED` contract version — escalation input |
 
+**`contract_registered_consumer`:**
+
+```sql
+REPLACE VIEW {Product}_Observability_V.contract_registered_consumer
+(
+     contract_key
+    ,interface_name
+    ,version_number
+    ,consumer_name
+    ,consumer_owner
+    ,consumer_contact
+    ,consumer_purpose
+    ,data_classification_access
+    ,notification_channel
+    ,registration_status
+    ,signoff_status
+    ,registered_dt
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key
+    ,ci.interface_name
+    ,cv.version_number
+    ,cc.consumer_name
+    ,cc.consumer_owner
+    ,cc.consumer_contact
+    ,cc.consumer_purpose
+    ,cc.data_classification_access
+    ,cc.notification_channel
+    ,cc.registration_status
+    ,cc.signoff_status
+    ,cc.registered_dt
+FROM {Product}_Semantic.contract_consumer AS cc
+INNER JOIN {Product}_Semantic.contract_interface AS ci
+    ON ci.contract_interface_id = cc.contract_interface_id
+   AND ci.is_active = 1
+INNER JOIN {Product}_Semantic.contract_version AS cv
+    ON cv.contract_version_id = cc.contract_version_id
+INNER JOIN {Product}_Semantic.contract AS c
+    ON c.contract_id = cv.contract_id
+   AND c.is_active = 1
+WHERE cc.registration_status = 'ACTIVE'
+;
+```
+
+**`contract_consumer_impact`:**
+
+```sql
+REPLACE VIEW {Product}_Observability_V.contract_consumer_impact
+(
+     contract_key
+    ,interface_name
+    ,violation_type
+    ,rule_severity
+    ,consumer_name
+    ,consumer_owner
+    ,notification_channel
+    ,affected_since_dts
+    ,remediation_status
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key
+    ,ci.interface_name
+    ,v.violation_type
+    ,v.violation_severity
+    ,cc.consumer_name
+    ,cc.consumer_owner
+    ,cc.notification_channel
+    ,v.detected_dts  AS affected_since_dts
+    ,v.remediation_status
+FROM {Product}_Observability.contract_violation AS v
+INNER JOIN {Product}_Semantic.contract_interface AS ci
+    ON ci.contract_interface_id = v.contract_interface_id
+   AND ci.is_active = 1
+INNER JOIN {Product}_Semantic.contract_consumer AS cc
+    ON cc.contract_interface_id = ci.contract_interface_id
+   AND cc.registration_status = 'ACTIVE'
+INNER JOIN {Product}_Semantic.contract_version AS cv
+    ON cv.contract_version_id = cc.contract_version_id
+INNER JOIN {Product}_Semantic.contract AS c
+    ON c.contract_id = cv.contract_id
+   AND c.is_active = 1
+WHERE v.remediation_status = 'OPEN'
+;
+```
+
+**`contract_deprecated_consumer`:**
+
+```sql
+REPLACE VIEW {Product}_Observability_V.contract_deprecated_consumer
+(
+     contract_key
+    ,interface_name
+    ,deprecated_version
+    ,consumer_name
+    ,consumer_owner
+    ,consumer_contact
+    ,notification_channel
+    ,deprecated_since_dt
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key
+    ,ci.interface_name
+    ,cv.version_number  AS deprecated_version
+    ,cc.consumer_name
+    ,cc.consumer_owner
+    ,cc.consumer_contact
+    ,cc.notification_channel
+    ,cv.deprecation_notice_dt  AS deprecated_since_dt
+FROM {Product}_Semantic.contract_consumer AS cc
+INNER JOIN {Product}_Semantic.contract_version AS cv
+    ON cv.contract_version_id = cc.contract_version_id
+   AND cv.version_status = 'DEPRECATED'
+INNER JOIN {Product}_Semantic.contract_interface AS ci
+    ON ci.contract_interface_id = cc.contract_interface_id
+   AND ci.is_active = 1
+INNER JOIN {Product}_Semantic.contract AS c
+    ON c.contract_id = cv.contract_id
+   AND c.is_active = 1
+WHERE cc.registration_status = 'ACTIVE'
+;
+```
+
 ---
 
 ### 12.4 Governance Views — `{Product}_Memory_V`
@@ -1216,6 +1761,82 @@ WHERE
 | `contract_change_history` | Full audit trail of all changes across all contracts and versions |
 | `contract_signoff_status` | Pending and completed consumer sign-off records for MAJOR version changes |
 | `contract_breaking_change_summary` | Planned MAJOR changes with affected consumer count and sign-off completion status |
+
+**`contract_change_history`:**
+
+```sql
+REPLACE VIEW {Product}_Memory_V.contract_change_history
+(
+     contract_key
+    ,version_number
+    ,change_type
+    ,change_description
+    ,changed_by
+    ,change_dts
+    ,breaking_change_ind
+    ,migration_notes
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key
+    ,cv.version_number
+    ,cl.change_type
+    ,cl.change_description
+    ,cl.changed_by
+    ,cl.change_dts
+    ,cl.breaking_change_ind
+    ,cl.migration_notes
+FROM {Product}_Memory.contract_change_log AS cl
+INNER JOIN {Product}_Semantic.contract_version AS cv
+    ON cv.contract_version_id = cl.contract_version_id
+INNER JOIN {Product}_Semantic.contract AS c
+    ON c.contract_id = cv.contract_id
+   AND c.is_active = 1
+ORDER BY cl.change_dts DESC
+;
+```
+
+**`contract_signoff_status`:**
+
+```sql
+REPLACE VIEW {Product}_Memory_V.contract_signoff_status
+(
+     contract_key
+    ,version_number
+    ,consumer_name
+    ,consumer_owner
+    ,signoff_status
+    ,requested_dts
+    ,deadline_dt
+    ,signoff_dts
+    ,signed_off_by
+    ,signoff_notes
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key
+    ,cv.version_number
+    ,cc.consumer_name
+    ,cc.consumer_owner
+    ,cs.signoff_status
+    ,cs.requested_dts
+    ,cs.deadline_dt
+    ,cs.signoff_dts
+    ,cs.signed_off_by
+    ,cs.signoff_notes
+FROM {Product}_Memory.contract_consumer_signoff AS cs
+INNER JOIN {Product}_Semantic.contract_version AS cv
+    ON cv.contract_version_id = cs.contract_version_id
+INNER JOIN {Product}_Semantic.contract AS c
+    ON c.contract_id = cv.contract_id
+   AND c.is_active = 1
+INNER JOIN {Product}_Semantic.contract_consumer AS cc
+    ON cc.contract_consumer_id = cs.contract_consumer_id
+WHERE cs.signoff_status IN ('PENDING', 'APPROVED', 'REJECTED')
+;
+```
 
 ---
 
@@ -1230,6 +1851,96 @@ WHERE
 | `contract_dcat_dataset_export_v` | DCAT — produces JSON-LD Dataset and Distribution records |
 | `contract_lineage_context_v` | OpenLineage — provides the join context needed to add contract facets to lineage events |
 | `contract_telemetry_context_v` | OpenTelemetry — provides the contract attribute values for telemetry span enrichment |
+
+**`contract_lineage_context_v`:**
+
+```sql
+REPLACE VIEW {Product}_Semantic_V.contract_lineage_context_v
+(
+     contract_key
+    ,interface_name
+    ,interface_type
+    ,database_name
+    ,object_name
+    ,version_number
+    ,validation_run_id
+    ,validation_run_status
+    ,is_compliant
+    ,datahub_dataset_urn
+    ,openlineage_namespace
+    ,openlineage_job_name
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key
+    ,ci.interface_name
+    ,ci.interface_type
+    ,ci.database_name
+    ,ci.object_name
+    ,cv.version_number
+    ,vr.validation_run_id
+    ,vr.run_status  AS validation_run_status
+    ,CASE WHEN ci.publication_status = 'PUBLISHED' THEN 1 ELSE 0 END  AS is_compliant
+    -- DataHub dataset URN derived from database and object names
+    ,('urn:li:dataset:(urn:li:dataPlatform:teradata,' (VARCHAR(500))
+      || ci.database_name || '.' || ci.object_name || ',PRODUCTION)')  AS datahub_dataset_urn
+    ,ci.database_name  AS openlineage_namespace
+    ,ci.object_name    AS openlineage_job_name
+FROM {Product}_Semantic.contract AS c
+INNER JOIN {Product}_Semantic.contract_version AS cv
+    ON cv.contract_id = c.contract_id
+   AND cv.version_status = 'ACTIVE'
+INNER JOIN {Product}_Semantic.contract_interface AS ci
+    ON ci.contract_version_id = cv.contract_version_id
+   AND ci.is_active = 1
+LEFT OUTER JOIN {Product}_Observability.contract_validation_run AS vr
+    ON vr.contract_interface_id = ci.contract_interface_id
+   AND vr.validation_run_id = (
+       SELECT MAX(vr2.validation_run_id)
+       FROM {Product}_Observability.contract_validation_run AS vr2
+       WHERE vr2.contract_interface_id = ci.contract_interface_id
+   )
+WHERE c.is_active = 1
+;
+```
+
+**`contract_telemetry_context_v`:**
+
+```sql
+REPLACE VIEW {Product}_Semantic_V.contract_telemetry_context_v
+(
+     contract_key
+    ,contract_version
+    ,interface_name
+    ,is_compliant
+    ,publication_status
+    ,consumer_count
+    ,latest_validation_status
+)
+AS
+LOCKING ROW FOR ACCESS
+SELECT
+     c.contract_key          AS contract_key
+    ,cv.version_number       AS contract_version
+    ,ci.interface_name
+    ,CASE WHEN ci.publication_status = 'PUBLISHED' THEN 1 ELSE 0 END  AS is_compliant
+    ,ci.publication_status
+    ,(SELECT COUNT(*)
+      FROM {Product}_Semantic.contract_consumer AS cc2
+      WHERE cc2.contract_interface_id = ci.contract_interface_id
+        AND cc2.registration_status = 'ACTIVE')  AS consumer_count
+    ,ci.validation_status    AS latest_validation_status
+FROM {Product}_Semantic.contract AS c
+INNER JOIN {Product}_Semantic.contract_version AS cv
+    ON cv.contract_id = c.contract_id
+   AND cv.version_status = 'ACTIVE'
+INNER JOIN {Product}_Semantic.contract_interface AS ci
+    ON ci.contract_version_id = cv.contract_version_id
+   AND ci.is_active = 1
+WHERE c.is_active = 1
+;
+```
 
 ---
 
@@ -1377,6 +2088,12 @@ The following checklist must be completed before any data product interface is d
 - [ ] Set `publication_gate_mode` on each `contract_interface` row: `BLOCKING` for production interfaces, `ADVISORY` for development/exploratory interfaces (document ADVISORY choice in `contract_design_decision`)
 - [ ] Verified that `contract_interface.publication_status = 'UNPUBLISHED'` before the first validation cycle runs
 - [ ] Registered all known consumers in `contract_consumer` against the `1.0.0` version
+- [ ] Added `contract_server` rows for each interface, covering PRODUCTION and any TEST environments
+- [ ] Added `contract_stakeholder` rows covering at minimum OWNER and STEWARD roles
+- [ ] Added `contract_tag` rows for domain, regulatory, and subject area classification (required for DCAT export)
+- [ ] Set `license_uri` on the `contract` row for any interface shared outside the immediate product team
+- [ ] Set `interface_description` on every `contract_interface` row (required for DPDS port descriptors)
+- [ ] Set `refresh_frequency_uri` using the Dublin Core frequency vocabulary where `refresh_frequency` is set
 
 **Validation (Observability module):**
 
