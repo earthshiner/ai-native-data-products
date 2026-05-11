@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contract Backbone Review — AI-Native Data Products</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* =========================================================
+     Reset & base
+  ========================================================= */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary-dark:  #0E2A33;
+    --teal:          #196F6B;
+    --teal-light:    #E7F3F1;
+    --card-bg:       #F3FAF9;
+    --white:         #FFFFFF;
+    --body-text:     #374151;
+    --muted:         #6B7280;
+    --border:        #D1FAF4;
+    --amber:         #D97706;
+    --success:       #059669;
+    --error:         #DC2626;
+    --code-bg:       #1E2A3A;
+    --code-text:     #E2E8F0;
+    --nav-h:         60px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--body-text);
+    background: #F8FFFE;
+    padding-top: var(--nav-h);
+  }
+
+  h1, h2, h3, h4, h5 { font-weight: 700; line-height: 1.25; color: var(--primary-dark); }
+  h1 { font-size: 2.25rem; }
+  h2 { font-size: 1.65rem; }
+  h3 { font-size: 1.2rem; }
+  h4 { font-size: 1rem; }
+
+  a { color: var(--teal); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  p { margin-bottom: 0.85em; }
+  p:last-child { margin-bottom: 0; }
+
+  code, pre { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+  /* =========================================================
+     Layout helpers
+  ========================================================= */
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  .section {
+    padding: 64px 0;
+  }
+
+  .section + .section {
+    border-top: 1px solid var(--border);
+  }
+
+  /* =========================================================
+     Fixed nav
+  ========================================================= */
+  .top-nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--nav-h);
+    background: var(--primary-dark);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+
+  .top-nav .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .nav-wordmark {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--white);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .nav-wordmark span {
+    opacity: 0.55;
+    font-weight: 400;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .nav-links a {
+    color: rgba(255,255,255,0.75);
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+
+  .nav-links a:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--white);
+    text-decoration: none;
+  }
+
+  .nav-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(5,150,105,0.18);
+    border: 1px solid rgba(5,150,105,0.45);
+    color: #6EE7B7;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    margin-left: 12px;
+  }
+
+  .nav-badge-dot {
+    width: 7px; height: 7px;
+    background: #34D399;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* =========================================================
+     Hero
+  ========================================================= */
+  .hero {
+    background: var(--white);
+    padding: 72px 0 56px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero-eyebrow {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 12px;
+  }
+
+  .hero h1 { margin-bottom: 14px; max-width: 760px; }
+
+  .hero-subtitle {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 680px;
+    margin-bottom: 40px;
+  }
+
+  .hero-tagline {
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--teal);
+    margin-top: 28px;
+    border-left: 3px solid var(--teal);
+    padding-left: 14px;
+  }
+
+  /* SVG diagram wrapper */
+  .diagram-wrap {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  /* =========================================================
+     Accordion
+  ========================================================= */
+  .accordion { display: flex; flex-direction: column; gap: 10px; }
+
+  .acc-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--white);
+  }
+
+  .acc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--card-bg);
+    transition: background 0.15s;
+    gap: 12px;
+  }
+
+  .acc-header:hover { background: var(--teal-light); }
+
+  .acc-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--primary-dark);
+    flex: 1;
+  }
+
+  .acc-chevron {
+    width: 20px; height: 20px;
+    flex-shrink: 0;
+    transition: transform 0.25s;
+    color: var(--teal);
+  }
+
+  .acc-item.open .acc-chevron { transform: rotate(180deg); }
+
+  .acc-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+  }
+
+  .acc-item.open .acc-body { max-height: 1200px; }
+
+  .acc-content {
+    padding: 20px 22px;
+    border-top: 1px solid var(--border);
+    font-size: 0.93rem;
+    line-height: 1.7;
+  }
+
+  /* =========================================================
+     Tabs
+  ========================================================= */
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    padding: 10px 20px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--muted);
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    border-radius: 4px 4px 0 0;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover { color: var(--teal); background: var(--teal-light); }
+
+  .tab-btn.active {
+    color: var(--teal);
+    border-bottom-color: var(--teal);
+  }
+
+  .tab-panel {
+    display: none;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .tab-panel.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* =========================================================
+     Tables
+  ========================================================= */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    margin: 16px 0;
+  }
+
+  .data-table th {
+    background: var(--primary-dark);
+    color: var(--white);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+  }
+
+  .data-table th:first-child { border-radius: 6px 0 0 0; }
+  .data-table th:last-child  { border-radius: 0 6px 0 0; }
+
+  .data-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:nth-child(even) td { background: var(--card-bg); }
+
+  .data-table code {
+    font-size: 0.82em;
+    background: #E7F3F1;
+    color: var(--teal);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* =========================================================
+     Callout boxes
+  ========================================================= */
+  .callout {
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 0.9rem;
+    margin: 20px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .callout-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+
+  .callout-teal {
+    background: var(--teal-light);
+    border-left: 4px solid var(--teal);
+    color: var(--primary-dark);
+  }
+
+  .callout-amber {
+    background: #FFFBEB;
+    border-left: 4px solid var(--amber);
+    color: #92400E;
+  }
+
+  .callout-success {
+    background: #ECFDF5;
+    border-left: 4px solid var(--success);
+    color: #064E3B;
+  }
+
+  /* =========================================================
+     Code blocks
+  ========================================================= */
+  .code-block {
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 8px;
+    padding: 20px 22px;
+    overflow-x: auto;
+    font-size: 0.83rem;
+    line-height: 1.65;
+    margin: 16px 0;
+  }
+
+  .code-block .kw  { color: #67E8F9; }   /* teal — keywords */
+  .code-block .str { color: #FCD34D; }   /* amber — strings/values */
+  .code-block .cm  { color: #6B8FAB; font-style: italic; }  /* comments */
+  .code-block .fn  { color: #A5F3FC; }   /* function/view names */
+  .code-block .num { color: #86EFAC; }   /* numbers */
+
+  /* =========================================================
+     State machine flow diagram
+  ========================================================= */
+  .flow-wrap {
+    overflow-x: auto;
+    padding: 8px 0;
+    margin: 20px 0;
+  }
+
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    min-width: 600px;
+  }
+
+  .flow-node {
+    background: var(--card-bg);
+    border: 2px solid var(--teal);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--primary-dark);
+    white-space: nowrap;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .flow-node.start  { border-color: var(--muted); color: var(--muted); }
+  .flow-node.active { background: #ECFDF5; border-color: var(--success); color: #064E3B; }
+  .flow-node.error  { background: #FEF2F2; border-color: var(--error); color: #7F1D1D; }
+  .flow-node.warn   { background: #FFFBEB; border-color: var(--amber); color: #78350F; }
+
+  .flow-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 0 6px;
+    flex-shrink: 0;
+  }
+
+  .flow-arrow-line {
+    height: 2px;
+    width: 48px;
+    background: var(--teal);
+    position: relative;
+  }
+
+  .flow-arrow-line::after {
+    content: '';
+    position: absolute;
+    right: -1px; top: -4px;
+    border: 5px solid transparent;
+    border-left-color: var(--teal);
+  }
+
+  .flow-arrow-label {
+    font-size: 0.68rem;
+    color: var(--muted);
+    white-space: nowrap;
+    text-align: center;
+    max-width: 80px;
+  }
+
+  .flow-row {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* =========================================================
+     Standard cards grid
+  ========================================================= */
+  .cards-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .cards-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 20px 0;
+  }
+
+  .std-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+
+  .std-card:hover {
+    box-shadow: 0 4px 16px rgba(25,111,107,0.12);
+    transform: translateY(-2px);
+  }
+
+  .std-card-icon { font-size: 1.6rem; margin-bottom: 8px; }
+
+  .std-card-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--primary-dark);
+    margin-bottom: 4px;
+  }
+
+  .std-card-direction {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+  }
+
+  .dir-out  { background: #EFF6FF; color: #1D4ED8; }
+  .dir-in   { background: #F5F3FF; color: #6D28D9; }
+  .dir-both { background: #ECFDF5; color: #065F46; }
+
+  .std-card-desc {
+    font-size: 0.83rem;
+    color: var(--body-text);
+    line-height: 1.55;
+  }
+
+  /* =========================================================
+     Prompt cards
+  ========================================================= */
+  .prompt-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: box-shadow 0.2s;
+  }
+
+  .prompt-card:hover { box-shadow: 0 6px 20px rgba(25,111,107,0.1); }
+
+  .prompt-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .prompt-card-icon {
+    font-size: 2rem;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .prompt-card-meta {}
+
+  .prompt-card-filename {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--teal);
+    margin-bottom: 3px;
+  }
+
+  .prompt-card-new {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .badge-new     { background: #ECFDF5; color: #065F46; }
+  .badge-updated { background: #FFFBEB; color: #92400E; }
+
+  .prompt-card h3 { font-size: 1rem; margin-bottom: 6px; color: var(--primary-dark); }
+
+  .prompt-card-desc {
+    font-size: 0.88rem;
+    color: var(--body-text);
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+  .prompt-card-use {
+    font-size: 0.82rem;
+    background: var(--teal-light);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--primary-dark);
+  }
+
+  .prompt-card-use strong { color: var(--teal); }
+
+  /* =========================================================
+     Status section
+  ========================================================= */
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  .status-cell {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+
+  .status-cell-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .status-cell-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+  }
+
+  .status-cell-value code {
+    font-size: 0.83rem;
+    background: var(--teal-light);
+    color: var(--teal);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  /* Discussion questions */
+  .question-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    transition: border-color 0.2s;
+  }
+
+  .question-card:hover { border-color: var(--teal); }
+
+  .question-num {
+    width: 28px; height: 28px;
+    background: var(--teal);
+    color: var(--white);
+    border-radius: 50%;
+    font-size: 0.78rem;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .question-text {
+    font-size: 0.93rem;
+    line-height: 1.6;
+    color: var(--body-text);
+  }
+
+  /* Feedback area */
+  .feedback-area {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-top: 32px;
+  }
+
+  .feedback-area label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--primary-dark);
+    margin-bottom: 10px;
+  }
+
+  .feedback-area textarea {
+    width: 100%;
+    min-height: 120px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    color: var(--body-text);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .feedback-area textarea:focus { border-color: var(--teal); }
+
+  .copy-btn {
+    margin-top: 10px;
+    background: var(--teal);
+    color: var(--white);
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .copy-btn:hover { background: #145a57; }
+  .copy-btn.copied { background: var(--success); }
+
+  /* =========================================================
+     Two-column compare
+  ========================================================= */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .compare-card {
+    border-radius: 10px;
+    padding: 18px;
+  }
+
+  .compare-card.blocking {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+  }
+
+  .compare-card.advisory {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+  }
+
+  .compare-card h4 {
+    margin-bottom: 10px;
+    font-size: 0.92rem;
+  }
+
+  .compare-card.blocking h4 { color: var(--error); }
+  .compare-card.advisory h4 { color: var(--amber); }
+
+  .compare-card ul {
+    padding-left: 18px;
+    font-size: 0.87rem;
+    line-height: 1.7;
+    color: var(--body-text);
+  }
+
+  /* =========================================================
+     Section headings
+  ========================================================= */
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 8px;
+  }
+
+  .section-heading {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--primary-dark);
+    margin-bottom: 10px;
+  }
+
+  .section-subheading {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-bottom: 32px;
+    max-width: 640px;
+  }
+
+  /* =========================================================
+     View groups accordion inside tab
+  ========================================================= */
+  .view-group { margin-bottom: 8px; }
+
+  .view-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 18px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .view-group-header:hover { background: var(--teal-light); }
+
+  .view-group-header h4 {
+    font-size: 0.92rem;
+    color: var(--primary-dark);
+  }
+
+  .view-group-db {
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--teal);
+    background: var(--teal-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .view-group-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .view-group-chevron {
+    width: 18px; height: 18px;
+    color: var(--teal);
+    transition: transform 0.25s;
+    flex-shrink: 0;
+  }
+
+  .view-group.open .view-group-chevron { transform: rotate(180deg); }
+
+  .view-group-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+
+  .view-group.open .view-group-body { max-height: 400px; }
+
+  .view-group-content {
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .view-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .view-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    color: var(--primary-dark);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* =========================================================
+     Responsive
+  ========================================================= */
+  @media (max-width: 900px) {
+    .compare-grid  { grid-template-columns: 1fr; }
+    .status-grid   { grid-template-columns: 1fr; }
+    .cards-grid-4  { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+    .nav-links     { display: none; }
+    h1             { font-size: 1.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- =========================================================
+     Fixed top nav
+========================================================= -->
+<nav class="top-nav">
+  <div class="container">
+    <div class="nav-wordmark">Teradata <span>·</span> AI-Native Data Products</div>
+    <div class="nav-links">
+      <a href="#problem">The Problem</a>
+      <a href="#design">The Design</a>
+      <a href="#prompts">Prompts</a>
+      <a href="#review">Review</a>
+    </div>
+    <div class="nav-badge">
+      <span class="nav-badge-dot"></span>
+      Draft · Not merged to main
+    </div>
+  </div>
+</nav>
+
+<!-- =========================================================
+     Hero
+========================================================= -->
+<section class="hero" id="hero">
+  <div class="container">
+    <div class="hero-eyebrow">Design Review Document</div>
+    <h1>Contract-Aware AI-Native Data Products</h1>
+    <p class="hero-subtitle">A reusable interoperability layer — cross-cutting, not a seventh module.</p>
+
+    <div class="diagram-wrap">
+      <!-- Architecture SVG diagram -->
+      <svg width="900" height="340" viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, sans-serif">
+
+        <!-- LEFT PANEL: Data Product Modules -->
+        <rect x="10" y="10" width="210" height="320" rx="10" fill="#E7F3F1" stroke="#196F6B" stroke-width="1.5"/>
+        <!-- Header -->
+        <rect x="10" y="10" width="210" height="36" rx="10" fill="#196F6B"/>
+        <rect x="10" y="32" width="210" height="14" fill="#196F6B"/>
+        <text x="115" y="33" text-anchor="middle" fill="white" font-size="12" font-weight="700">Data Product Modules</text>
+
+        <!-- Module cards -->
+        <!-- Domain -->
+        <rect x="22" y="58" width="186" height="36" rx="6" fill="white" stroke="#D1FAF4" stroke-width="1"/>
+        <text x="34" y="75" fill="#0E2A33" font-size="11" font-weight="700">Domain</text>
+        <text x="34" y="88" fill="#6B7280" font-size="9.5">core data</text>
+
+        <!-- Semantic -->
+        <rect x="22" y="100" width="186" height="36" rx="6" fill="white" stroke="#196F6B" stroke-width="1.5"/>
+        <text x="34" y="117" fill="#0E2A33" font-size="11" font-weight="700">Semantic</text>
+        <text x="34" y="130" fill="#6B7280" font-size="9.5">meaning + contracts</text>
+
+        <!-- Search -->
+        <rect x="22" y="142" width="186" height="36" rx="6" fill="white" stroke="#D1FAF4" stroke-width="1"/>
+        <text x="34" y="159" fill="#0E2A33" font-size="11" font-weight="700">Search</text>
+        <text x="34" y="172" fill="#6B7280" font-size="9.5">retrieval</text>
+
+        <!-- Prediction -->
+        <rect x="22" y="184" width="186" height="36" rx="6" fill="white" stroke="#D1FAF4" stroke-width="1"/>
+        <text x="34" y="201" fill="#0E2A33" font-size="11" font-weight="700">Prediction</text>
+        <text x="34" y="214" fill="#6B7280" font-size="9.5">ML outputs</text>
+
+        <!-- Observability -->
+        <rect x="22" y="226" width="186" height="36" rx="6" fill="white" stroke="#196F6B" stroke-width="1.5"/>
+        <text x="34" y="243" fill="#0E2A33" font-size="11" font-weight="700">Observability</text>
+        <text x="34" y="256" fill="#6B7280" font-size="9.5">evidence</text>
+
+        <!-- Memory -->
+        <rect x="22" y="268" width="186" height="36" rx="6" fill="white" stroke="#196F6B" stroke-width="1.5"/>
+        <text x="34" y="285" fill="#0E2A33" font-size="11" font-weight="700">Memory</text>
+        <text x="34" y="298" fill="#6B7280" font-size="9.5">history</text>
+
+        <!-- ARROW: left → middle -->
+        <!-- Line -->
+        <line x1="222" y1="170" x2="262" y2="170" stroke="#196F6B" stroke-width="2"/>
+        <polygon points="262,165 272,170 262,175" fill="#196F6B"/>
+        <!-- Label -->
+        <text x="242" y="161" text-anchor="middle" fill="#196F6B" font-size="9.5" font-weight="600">feeds</text>
+
+        <!-- MIDDLE PANEL: Contract Backbone -->
+        <rect x="272" y="10" width="340" height="320" rx="10" fill="#DCF0EE" stroke="#196F6B" stroke-width="1.5"/>
+        <!-- Header banner -->
+        <rect x="272" y="10" width="340" height="38" rx="10" fill="#0E2A33"/>
+        <rect x="272" y="34" width="340" height="14" fill="#0E2A33"/>
+        <text x="442" y="33" text-anchor="middle" fill="white" font-size="13" font-weight="700">Contract Backbone</text>
+
+        <!-- Semantic row -->
+        <rect x="286" y="62" width="312" height="64" rx="8" fill="#196F6B"/>
+        <text x="302" y="82" fill="white" font-size="11" font-weight="700">Semantic</text>
+        <text x="302" y="97" fill="rgba(255,255,255,0.82)" font-size="9.5">Definition · Versioning · Interfaces</text>
+        <text x="302" y="109" fill="rgba(255,255,255,0.82)" font-size="9.5">Rules · Consumers · Servers · Tags</text>
+
+        <!-- Observability row -->
+        <rect x="286" y="136" width="312" height="56" rx="8" fill="#2E8B87"/>
+        <text x="302" y="157" fill="white" font-size="11" font-weight="700">Observability</text>
+        <text x="302" y="172" fill="rgba(255,255,255,0.82)" font-size="9.5">Validation · Violations · SLA Status</text>
+
+        <!-- Memory row -->
+        <rect x="286" y="202" width="312" height="56" rx="8" fill="#4AADAA" fill-opacity="0.6"/>
+        <text x="302" y="223" fill="#0E2A33" font-size="11" font-weight="700">Memory</text>
+        <text x="302" y="238" fill="#1E4A47" font-size="9.5">Change Log · Decisions · Sign-off</text>
+
+        <!-- Annotation lines -->
+        <text x="442" y="276" text-anchor="middle" fill="#374151" font-size="9" font-style="italic">Semantic stores the promise</text>
+        <text x="442" y="291" text-anchor="middle" fill="#374151" font-size="9" font-style="italic">Observability stores the evidence</text>
+        <text x="442" y="306" text-anchor="middle" fill="#374151" font-size="9" font-style="italic">Memory stores the decisions and history</text>
+
+        <!-- ARROW: middle → right -->
+        <line x1="614" y1="170" x2="654" y2="170" stroke="#0E2A33" stroke-width="2"/>
+        <polygon points="654,165 664,170 654,175" fill="#0E2A33"/>
+        <text x="634" y="161" text-anchor="middle" fill="#0E2A33" font-size="9.5" font-weight="600">serves</text>
+        <text x="634" y="181" text-anchor="middle" fill="#6B7280" font-size="8.5" font-style="italic">Generate · Emit</text>
+        <text x="634" y="191" text-anchor="middle" fill="#6B7280" font-size="8.5" font-style="italic">Synchronise</text>
+
+        <!-- RIGHT PANEL: External Standards -->
+        <rect x="664" y="10" width="226" height="320" rx="10" fill="#F8FFFE" stroke="#0E2A33" stroke-width="1.5"/>
+        <!-- Header -->
+        <rect x="664" y="10" width="226" height="36" rx="10" fill="#F3FAF9"/>
+        <rect x="664" y="32" width="226" height="14" fill="#F3FAF9"/>
+        <text x="777" y="33" text-anchor="middle" fill="#0E2A33" font-size="12" font-weight="700">External Standards</text>
+
+        <!-- Standards rows -->
+        <rect x="676" y="56" width="202" height="29" rx="5" fill="white" stroke="#D1FAF4" stroke-width="1"/>
+        <text x="688" y="72" fill="#0E2A33" font-size="10.5" font-weight="600">DPDS</text>
+        <text x="744" y="72" fill="#6B7280" font-size="9.5">· package and ports</text>
+
+        <rect x="676" y="91" width="202" height="29" rx="5" fill="white" stroke="#D1FAF4" stroke-width="1"/>
+        <text x="688" y="107" fill="#0E2A33" font-size="10.5" font-weight="600">ODPS</text>
+        <text x="736" y="107" fill="#6B7280" font-size="9.5">· product profile</text>
+
+        <rect x="676" y="126" width="202" height="29" rx="5" fill="white" stroke="#D1FAF4" stroke-width="1"/>
+        <text x="688" y="142" fill="#0E2A33" font-size="10.5" font-weight="600">ODCS</text>
+        <text x="736" y="142" fill="#6B7280" font-size="9.5">· contract format</text>
+
+        <rect x="676" y="161" width="202" height="29" rx="5" fill="white" stroke="#D1FAF4" stroke-width="1"/>
+        <text x="688" y="177" fill="#0E2A33" font-size="10.5" font-weight="600">DataHub / OpenMetadata</text>
+
+        <rect x="676" y="196" width="202" height="29" rx="5" fill="white" stroke="#D1FAF4" stroke-width="1"/>
+        <text x="688" y="212" fill="#0E2A33" font-size="10.5" font-weight="600">OpenLineage</text>
+        <text x="779" y="212" fill="#6B7280" font-size="9.5">· provenance</text>
+
+        <rect x="676" y="231" width="202" height="29" rx="5" fill="white" stroke="#D1FAF4" stroke-width="1"/>
+        <text x="688" y="247" fill="#0E2A33" font-size="10.5" font-weight="600">OpenTelemetry</text>
+        <text x="784" y="247" fill="#6B7280" font-size="9.5">· telemetry</text>
+
+        <rect x="676" y="266" width="202" height="29" rx="5" fill="white" stroke="#D1FAF4" stroke-width="1"/>
+        <text x="688" y="282" fill="#0E2A33" font-size="10.5" font-weight="600">DCAT</text>
+        <text x="726" y="282" fill="#6B7280" font-size="9.5">· catalogue export</text>
+
+      </svg>
+    </div>
+
+    <p class="hero-tagline">Teradata defines and runs the product; the Contract Backbone lets open standards consume evidence-backed promises.</p>
+  </div>
+</section>
+
+<!-- =========================================================
+     Section: The Problem
+========================================================= -->
+<section class="section" id="problem">
+  <div class="container">
+    <div class="section-label">Background</div>
+    <h2 class="section-heading">The Problem</h2>
+    <p class="section-subheading">Three gaps that drove the design.</p>
+
+    <div class="accordion" id="acc-problem">
+
+      <div class="acc-item open">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <span class="acc-title">A contract that lives in a document is not a contract</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="acc-body">
+          <div class="acc-content">
+            <p>The existing AI-Native Data Product architecture is deliberately self-describing: each module exposes metadata-rich views, and agents discover capabilities through a structured discovery protocol. This is good design — but it had a gap.</p>
+            <p><strong>Promises were implicit.</strong> The semantic layer described what a product contained, but did not capture what a product promised — the freshness commitment, the null-rate tolerance, the schema stability guarantee. These lived in design documents, if they existed at all.</p>
+            <p><strong>Validation was optional.</strong> Observability tables collected quality evidence, but nothing in the access layer acted on that evidence. A product could be in a known-bad state and still serve data to consumers.</p>
+            <p><strong>Consumer impact was invisible.</strong> When a product changed a contracted interface — adding a column, changing a type, deprecating a field — there was no structured record of which consumers depended on that interface or whether they had acknowledged the change.</p>
+            <p>The backbone addresses all three: it stores the promise in structured tables, enforces it at the access layer, and records the full history of every decision made about it.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <span class="acc-title">8 gaps against the production data contract standard</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="acc-body">
+          <div class="acc-content">
+            <p>A review of the production Data Contract Standard (ODCS) and related article coverage identified eight structural gaps in the prior architecture:</p>
+            <ul style="padding-left:18px; line-height:1.9; margin-top:8px;">
+              <li><strong>No pipeline enforcement gate.</strong> Validation results existed but nothing blocked consumption on failure.</li>
+              <li><strong>No rule sub-type enumeration.</strong> Quality rules lacked structured categories; agents and export tools could not reason about rule intent.</li>
+              <li><strong>Weak quality coverage floor.</strong> There was no minimum rule requirement — a contract interface could exist with zero quality rules.</li>
+              <li><strong>Missing server metadata.</strong> The contract had no structured record of where data was served from (host, port, driver).</li>
+              <li><strong>Missing stakeholder registry.</strong> No formal owner, data steward, or consumer record was attached to the contract.</li>
+              <li><strong>No tag support.</strong> Contracts could not be tagged for domain, sensitivity, or regulatory classification.</li>
+              <li><strong>No SLA formalisation.</strong> Freshness, availability, and completeness commitments had no structured representation.</li>
+              <li><strong>No consumer sign-off.</strong> Breaking change governance had no structured approval record.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <span class="acc-title">Coverage gaps against 8 open standards</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="acc-body">
+          <div class="acc-content">
+            <p>The backbone was designed to make contracts consumable by open tooling. Pre-backbone, integration was either missing or incomplete for every standard reviewed:</p>
+            <table class="data-table" style="margin-top:12px;">
+              <thead>
+                <tr>
+                  <th>Standard</th>
+                  <th>Gap identified</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>ODCS</strong></td><td>Missing server metadata, stakeholder registry, and tag support in export</td></tr>
+                <tr><td><strong>DPDS</strong></td><td>Only output port was represented; input, discovery, observability, and control ports were absent</td></tr>
+                <tr><td><strong>DataHub</strong></td><td>No standard dataset URN pattern; assertion results were not emitted</td></tr>
+                <tr><td><strong>OpenLineage</strong></td><td>Standard quality facets (DataQualityAssertionsFacet, DataQualityMetricsFacet) were not populated</td></tr>
+                <tr><td><strong>OpenTelemetry</strong></td><td>No contract-level span attributes or metrics defined</td></tr>
+                <tr><td><strong>ODPS</strong></td><td>No quality evidence in product profile export</td></tr>
+                <tr><td><strong>OpenMetadata</strong></td><td>Quality tests not grouped by contract interface (TestSuite)</td></tr>
+                <tr><td><strong>DCAT</strong></td><td>No licence URI or tag mapping for dataset catalogue export</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     Section: The Design
+========================================================= -->
+<section class="section" id="design">
+  <div class="container">
+    <div class="section-label">Technical Design</div>
+    <h2 class="section-heading">The Design</h2>
+    <p class="section-subheading">Five aspects of the contract backbone — explore each tab.</p>
+
+    <div class="tab-bar" id="design-tabs">
+      <button class="tab-btn active" onclick="switchTab('design-tabs','design-panels','tab-arch',this)">Architecture</button>
+      <button class="tab-btn"        onclick="switchTab('design-tabs','design-panels','tab-gate',this)">Publication Gate</button>
+      <button class="tab-btn"        onclick="switchTab('design-tabs','design-panels','tab-floor',this)">Contract Floor</button>
+      <button class="tab-btn"        onclick="switchTab('design-tabs','design-panels','tab-std',this)">External Standards</button>
+      <button class="tab-btn"        onclick="switchTab('design-tabs','design-panels','tab-views',this)">Views</button>
+    </div>
+
+    <div id="design-panels">
+
+      <!-- TAB 1: Architecture -->
+      <div id="tab-arch" class="tab-panel active">
+        <h3 style="margin-bottom:16px;">Module Allocation</h3>
+        <p>The backbone does not introduce a new module. It extends three existing module databases — Semantic, Observability, and Memory — with contract-specific tables.</p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Concern</th>
+              <th>Module</th>
+              <th>Tables</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Contract definition</strong></td>
+              <td>Semantic</td>
+              <td>
+                <code>contract</code>, <code>contract_version</code>, <code>contract_interface</code>,
+                <code>contract_field</code>, <code>contract_rule</code>, <code>contract_consumer</code>,
+                <code>contract_server</code>, <code>contract_stakeholder</code>, <code>contract_tag</code>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Validation evidence</strong></td>
+              <td>Observability</td>
+              <td>
+                <code>contract_validation_run</code>, <code>contract_validation_result</code>,
+                <code>contract_violation</code>, <code>contract_sla_status</code>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Governance history</strong></td>
+              <td>Memory</td>
+              <td>
+                <code>contract_change_log</code>, <code>contract_design_decision</code>,
+                <code>contract_consumer_signoff</code>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Contracted data</strong></td>
+              <td>Domain</td>
+              <td style="color:var(--muted); font-style:italic;">Existing views — not changed</td>
+            </tr>
+            <tr>
+              <td><strong>Consumption control</strong></td>
+              <td>Access</td>
+              <td>Publication gate in views; roles tied to interfaces</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-teal">
+          <span class="callout-icon">ℹ</span>
+          <div><strong>Cross-cutting design standard, not a seventh module.</strong> The backbone adds tables to three existing module databases. No new database is created. The access layer enforces the contract through view logic, not a separate gating service.</div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Publication Gate -->
+      <div id="tab-gate" class="tab-panel">
+        <h3 style="margin-bottom:8px;">The Pre-Consumption Enforcement Gate</h3>
+        <p style="margin-bottom:20px;">Previously, validation ran but its outcome had no effect on the access layer. A consumer querying a view would receive data regardless of whether the most recent validation passed or failed. The gate closes that gap.</p>
+
+        <h4 style="margin-bottom:12px; color:var(--teal);">Publication Status State Machine</h4>
+        <div class="flow-wrap">
+          <div class="flow-row">
+            <div class="flow" style="align-items:center;">
+              <div class="flow-node start">UNPUBLISHED</div>
+              <div class="flow-arrow">
+                <div class="flow-arrow-line"></div>
+                <span class="flow-arrow-label">first validation passes</span>
+              </div>
+              <div class="flow-node active">PUBLISHED</div>
+              <div class="flow-arrow">
+                <div class="flow-arrow-line"></div>
+                <span class="flow-arrow-label">CRITICAL failure + BLOCKING</span>
+              </div>
+              <div class="flow-node error">NON_COMPLIANT</div>
+              <div class="flow-arrow">
+                <div class="flow-arrow-line"></div>
+                <span class="flow-arrow-label">violation resolved</span>
+              </div>
+              <div class="flow-node active">PUBLISHED</div>
+            </div>
+            <div class="flow" style="align-items:center; margin-top:4px;">
+              <div style="width:210px; flex-shrink:0;"></div>
+              <div class="flow-arrow">
+                <div class="flow-arrow-line"></div>
+                <span class="flow-arrow-label">manual suspend</span>
+              </div>
+              <div class="flow-node warn">SUSPENDED</div>
+              <div class="flow-arrow">
+                <div class="flow-arrow-line" style="background:var(--amber);"></div>
+                <span class="flow-arrow-label">owner lifts</span>
+              </div>
+              <div class="flow-node active">PUBLISHED</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="compare-grid">
+          <div class="compare-card blocking">
+            <h4>BLOCKING — production default</h4>
+            <ul>
+              <li>CRITICAL rule failure → <code>publication_status = NON_COMPLIANT</code></li>
+              <li>Access layer view returns no rows</li>
+              <li>Consumers cannot load bad data</li>
+              <li>Requires fix and re-validation to restore</li>
+            </ul>
+          </div>
+          <div class="compare-card advisory">
+            <h4>ADVISORY — exploratory use</h4>
+            <ul>
+              <li>CRITICAL rule failure → alert only</li>
+              <li>Access layer continues serving data</li>
+              <li>Requires documented justification in <code>contract_design_decision</code></li>
+              <li>Not permitted in production without sign-off</li>
+            </ul>
+          </div>
+        </div>
+
+        <h4 style="margin:24px 0 10px;">Teradata Gate Check Pattern</h4>
+        <p style="margin-bottom:12px; font-size:0.9rem;">The gate is implemented as a correlated <code>EXISTS</code> sub-query in the Access layer view. When <code>publication_status</code> is not <code>PUBLISHED</code>, the sub-query returns no rows, and the view returns no rows.</p>
+
+        <div class="code-block"><pre><span class="kw">REPLACE VIEW</span> <span class="fn">Customer360_Access_V.customer_current</span>
+(
+     customer_id
+    ,customer_name
+    ,customer_status_cd
+    ,last_updated_dts
+)
+<span class="kw">AS</span>
+<span class="kw">LOCKING ROW FOR ACCESS</span>
+<span class="kw">SELECT</span>
+     d.customer_id
+    ,d.customer_name
+    ,d.customer_status_cd
+    ,d.last_updated_dts
+<span class="kw">FROM</span> <span class="fn">Customer360_Domain.customer_current_h</span> <span class="kw">AS</span> d
+<span class="kw">WHERE</span> d.is_current_ind = <span class="num">1</span>
+  <span class="kw">AND EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span>
+    <span class="kw">FROM</span> <span class="fn">Customer360_Semantic.contract_interface</span> <span class="kw">AS</span> ci
+    <span class="kw">WHERE</span> ci.database_name      = <span class="str">'Customer360_Access_V'</span>
+      <span class="kw">AND</span> ci.object_name        = <span class="str">'customer_current'</span>
+      <span class="kw">AND</span> ci.publication_status = <span class="str">'PUBLISHED'</span>
+      <span class="kw">AND</span> ci.is_active          = <span class="num">1</span>
+)
+;</pre></div>
+
+        <div class="callout callout-teal">
+          <span class="callout-icon">ℹ</span>
+          <div>
+            <strong><code>is_compliant</code> vs <code>publication_status</code>:</strong>
+            <code>is_compliant</code> is a convenience boolean alias on the view — <code>1</code> when <code>PUBLISHED</code>, <code>0</code> for everything else.
+            External tools use <code>is_compliant</code> for a simple yes/no check.
+            Internal pipeline logic uses <code>publication_status</code> to understand <em>why</em> a product is not compliant (non-compliant, suspended, unpublished, or retired).
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Contract Floor -->
+      <div id="tab-floor" class="tab-panel">
+        <h3 style="margin-bottom:8px;">Minimum Rule Coverage</h3>
+
+        <div class="callout callout-teal" style="margin-bottom:24px;">
+          <span class="callout-icon">🔒</span>
+          <div><strong>The Contract Floor.</strong> Every contracted interface must have these four rules before it may be deployed to production. An interface with fewer than four CRITICAL rules cannot transition from <code>UNPUBLISHED</code> to <code>PUBLISHED</code>.</div>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Rule</th>
+              <th>rule_sub_type</th>
+              <th>Severity</th>
+              <th>What it proves</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Freshness</strong></td>
+              <td><code>FRESHNESS_MAX_AGE</code></td>
+              <td><span style="color:var(--error); font-weight:700;">CRITICAL</span></td>
+              <td>Data is not stale beyond the committed SLA</td>
+            </tr>
+            <tr>
+              <td><strong>Row count</strong></td>
+              <td><code>ROW_COUNT_MIN</code></td>
+              <td><span style="color:var(--error); font-weight:700;">CRITICAL</span></td>
+              <td>The interface did not load empty or truncated</td>
+            </tr>
+            <tr>
+              <td><strong>Null rate on PK</strong></td>
+              <td><code>NULL_RATE_MAX</code></td>
+              <td><span style="color:var(--error); font-weight:700;">CRITICAL</span></td>
+              <td>Primary key fields are not null</td>
+            </tr>
+            <tr>
+              <td><strong>Schema</strong></td>
+              <td><code>SCHEMA_VALIDATION</code></td>
+              <td><span style="color:var(--error); font-weight:700;">CRITICAL</span></td>
+              <td>Physical schema matches the contracted columns</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="acc-item" id="sub-type-acc" style="margin-top:24px;">
+          <div class="acc-header" onclick="toggleAcc(this)">
+            <span class="acc-title">Full <code>rule_sub_type</code> enumeration — all 11 types</span>
+            <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="acc-body">
+            <div class="acc-content">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>rule_sub_type</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Floor rule?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>ROW_COUNT_MIN</code></td><td>Completeness</td><td>Minimum row count threshold</td><td><span style="color:var(--success); font-weight:700;">Yes</span></td></tr>
+                  <tr><td><code>ROW_COUNT_RANGE</code></td><td>Completeness</td><td>Row count within min/max bounds</td><td>No</td></tr>
+                  <tr><td><code>NULL_RATE_MAX</code></td><td>Integrity</td><td>Maximum null rate for a column</td><td><span style="color:var(--success); font-weight:700;">Yes (PK)</span></td></tr>
+                  <tr><td><code>UNIQUENESS</code></td><td>Integrity</td><td>Duplicate detection on specified columns</td><td>No</td></tr>
+                  <tr><td><code>VALUE_RANGE</code></td><td>Validity</td><td>Numeric value within min/max bounds</td><td>No</td></tr>
+                  <tr><td><code>VALUE_SET</code></td><td>Validity</td><td>Value must be in an approved set</td><td>No</td></tr>
+                  <tr><td><code>REFERENTIAL_INTEGRITY</code></td><td>Integrity</td><td>FK relationship check against another table</td><td>No</td></tr>
+                  <tr><td><code>PATTERN_MATCH</code></td><td>Validity</td><td>Column value matches a regex pattern</td><td>No</td></tr>
+                  <tr><td><code>FRESHNESS_MAX_AGE</code></td><td>Timeliness</td><td>Maximum age of latest record</td><td><span style="color:var(--success); font-weight:700;">Yes</span></td></tr>
+                  <tr><td><code>SCHEMA_VALIDATION</code></td><td>Schema</td><td>Column list and types match contract definition</td><td><span style="color:var(--success); font-weight:700;">Yes</span></td></tr>
+                  <tr><td><code>AVAILABILITY</code></td><td>Timeliness</td><td>Interface responds within SLA window</td><td>No</td></tr>
+                  <tr><td><code>SQL_ASSERTION</code></td><td>Custom</td><td>Arbitrary Teradata SQL returning 0 for pass, 1 for fail</td><td>No</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: External Standards -->
+      <div id="tab-std" class="tab-panel">
+        <h3 style="margin-bottom:8px;">Integration Coverage</h3>
+        <p style="margin-bottom:24px; font-size:0.9rem; color:var(--muted);">Eight external standards are supported. Direction indicates whether the backbone generates output, receives input, or synchronises both ways.</p>
+
+        <div class="cards-grid-4">
+
+          <div class="std-card">
+            <div class="std-card-icon">📋</div>
+            <div class="std-card-name">ODCS</div>
+            <span class="std-card-direction dir-out">OUTBOUND</span>
+            <p class="std-card-desc">contract → schema + quality + SLA + server + stakeholders + tags → ODCS YAML. Full v3 coverage including the fields previously missing (server, stakeholder, tag).</p>
+          </div>
+
+          <div class="std-card">
+            <div class="std-card-icon">🔌</div>
+            <div class="std-card-name">DPDS</div>
+            <span class="std-card-direction dir-out">OUTBOUND</span>
+            <p class="std-card-desc">contract_interface → all 5 port types: output, input, discovery, observability, and control. Previously only output ports were generated.</p>
+          </div>
+
+          <div class="std-card">
+            <div class="std-card-icon">📦</div>
+            <div class="std-card-name">ODPS</div>
+            <span class="std-card-direction dir-out">OUTBOUND</span>
+            <p class="std-card-desc">contract + quality evidence → product profile. Includes validation pass rate, active violations, and SLA status in the product descriptor.</p>
+          </div>
+
+          <div class="std-card">
+            <div class="std-card-icon">🗂</div>
+            <div class="std-card-name">DCAT</div>
+            <span class="std-card-direction dir-out">OUTBOUND</span>
+            <p class="std-card-desc">contract + license_uri + tags → dataset catalogue entry (JSON-LD). Enables registration in CKAN, data.gov, and compatible catalogues.</p>
+          </div>
+
+          <div class="std-card">
+            <div class="std-card-icon">🔍</div>
+            <div class="std-card-name">DataHub</div>
+            <span class="std-card-direction dir-both">BIDIRECTIONAL</span>
+            <p class="std-card-desc">Assertions + validation results pushed and pulled. Dataset URN pattern: <br/><code style="font-size:0.75em; word-break:break-all;">urn:li:dataset:(urn:li:dataPlatform:teradata,{db}.{table},PROD)</code></p>
+          </div>
+
+          <div class="std-card">
+            <div class="std-card-icon">🧪</div>
+            <div class="std-card-name">OpenMetadata</div>
+            <span class="std-card-direction dir-both">BIDIRECTIONAL</span>
+            <p class="std-card-desc">Quality tests + results synchronised. Tests are grouped by <code>contract_interface</code> which maps to a TestSuite. Results flow back into <code>contract_validation_result</code>.</p>
+          </div>
+
+          <div class="std-card">
+            <div class="std-card-icon">🔗</div>
+            <div class="std-card-name">OpenLineage</div>
+            <span class="std-card-direction dir-out">OUTBOUND</span>
+            <p class="std-card-desc">DataQualityAssertionsFacet + DataQualityMetricsFacet populated on RunEvent. Contract facets added to provide consumer-side context on provenance.</p>
+          </div>
+
+          <div class="std-card">
+            <div class="std-card-icon">📡</div>
+            <div class="std-card-name">OpenTelemetry</div>
+            <span class="std-card-direction dir-out">OUTBOUND</span>
+            <p class="std-card-desc">5 span attributes + 5 metrics: <code>validation.duration</code>, <code>violations.active</code>, <code>sla.freshness_lag</code>, <code>rules.pass_rate</code>, <code>consumers.registered</code>.</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 5: Views -->
+      <div id="tab-views" class="tab-panel">
+        <h3 style="margin-bottom:8px;">Contract View Groups</h3>
+        <p style="margin-bottom:6px;">Views act as the stable metadata API — agents and tools query views, never base tables. View DDL uses explicit Teradata column lists (column names declared before the <code>AS</code> keyword), so agents can discover the view's columns from the DDL without parsing the <code>SELECT</code> clause.</p>
+
+        <div class="callout callout-amber" style="margin:16px 0 24px;">
+          <span class="callout-icon">⚠</span>
+          <div>All view definitions use explicit Teradata column lists. Agents can discover view columns from the DDL without parsing the SELECT clause — this is a mandatory convention in the design standard.</div>
+        </div>
+
+        <!-- Discovery Views -->
+        <div class="view-group open">
+          <div class="view-group-header" onclick="toggleViewGroup(this)">
+            <h4>Discovery Views</h4>
+            <div class="view-group-meta">
+              <span class="view-group-db">*_Semantic_V</span>
+              <svg class="view-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+          <div class="view-group-body">
+            <div class="view-group-content">
+              <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Agent and consumer-facing views for contract discovery. The primary entry points for any tool integrating with the backbone.</p>
+              <div class="view-list">
+                <span class="view-pill">contract_current</span>
+                <span class="view-pill">contract_current_interface</span>
+                <span class="view-pill">contract_current_field</span>
+                <span class="view-pill">contract_current_rule</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Evidence Views -->
+        <div class="view-group" style="margin-top:8px;">
+          <div class="view-group-header" onclick="toggleViewGroup(this)">
+            <h4>Evidence Views</h4>
+            <div class="view-group-meta">
+              <span class="view-group-db">*_Observability_V</span>
+              <svg class="view-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+          <div class="view-group-body">
+            <div class="view-group-content">
+              <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Validation history, latest run status, active violations, and SLA standing. Used by monitoring agents and alerting pipelines.</p>
+              <div class="view-list">
+                <span class="view-pill">contract_latest_validation</span>
+                <span class="view-pill">contract_validation_history</span>
+                <span class="view-pill">contract_violation_summary</span>
+                <span class="view-pill">contract_sla_status</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Consumer Impact Views -->
+        <div class="view-group" style="margin-top:8px;">
+          <div class="view-group-header" onclick="toggleViewGroup(this)">
+            <h4>Consumer Impact Views</h4>
+            <div class="view-group-meta">
+              <span class="view-group-db">*_Observability_V</span>
+              <svg class="view-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+          <div class="view-group-body">
+            <div class="view-group-content">
+              <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Registered consumers, impact radius of a violation or breaking change, and deprecated consumer tracking.</p>
+              <div class="view-list">
+                <span class="view-pill">contract_registered_consumer</span>
+                <span class="view-pill">contract_consumer_impact</span>
+                <span class="view-pill">contract_deprecated_consumer</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Governance Views -->
+        <div class="view-group" style="margin-top:8px;">
+          <div class="view-group-header" onclick="toggleViewGroup(this)">
+            <h4>Governance Views</h4>
+            <div class="view-group-meta">
+              <span class="view-group-db">*_Memory_V</span>
+              <svg class="view-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+          <div class="view-group-body">
+            <div class="view-group-content">
+              <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Full audit trail, design decision log, consumer sign-off status, and breaking change summary for regulatory submission.</p>
+              <div class="view-list">
+                <span class="view-pill">contract_change_history</span>
+                <span class="view-pill">contract_signoff_status</span>
+                <span class="view-pill">contract_breaking_change_summary</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Standards Export Views -->
+        <div class="view-group" style="margin-top:8px;">
+          <div class="view-group-header" onclick="toggleViewGroup(this)">
+            <h4>Standards Export Views</h4>
+            <div class="view-group-meta">
+              <span class="view-group-db">*_Semantic_V</span>
+              <svg class="view-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+          <div class="view-group-body">
+            <div class="view-group-content">
+              <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Pre-shaped views for each external standard. Export agents query these views directly — no transformation logic outside the view definition.</p>
+              <div class="view-list">
+                <span class="view-pill">contract_odcs_export_v</span>
+                <span class="view-pill">contract_dpds_port_export_v</span>
+                <span class="view-pill">contract_dcat_dataset_export_v</span>
+                <span class="view-pill">contract_lineage_context_v</span>
+                <span class="view-pill">contract_telemetry_context_v</span>
+              </div>
+              <p style="margin-top:10px; font-size:0.82rem; color:var(--muted);">Note: <code>contract_lineage_context_v</code> includes the <code>datahub_dataset_urn</code> column pre-formatted as <code>urn:li:dataset:(urn:li:dataPlatform:teradata,{db}.{table},PROD)</code>.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- end tab-views -->
+
+    </div>
+    <!-- end design-panels -->
+
+  </div>
+</section>
+
+<!-- =========================================================
+     Section: Prompts
+========================================================= -->
+<section class="section" id="prompts">
+  <div class="container">
+    <div class="section-label">Implementation Support</div>
+    <h2 class="section-heading">Supporting Prompts</h2>
+    <p class="section-subheading">Four prompts in <code>/prompts</code> were added or updated to support implementation.</p>
+
+    <div class="cards-grid-2">
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-icon">🏗</div>
+          <div class="prompt-card-meta">
+            <div class="prompt-card-filename">Add_Contract_To_Data_Product.md <span class="prompt-card-new badge-new">NEW</span></div>
+          </div>
+        </div>
+        <h3>Add Contract to Data Product</h3>
+        <p class="prompt-card-desc">9-deliverable structured prompt for retrofitting the contract backbone onto an existing product. Covers interface audit, contract DDL, floor rules, publication gate view updates, Observability/Memory additions, ODCS artefacts, export views, and deployment plan.</p>
+        <div class="prompt-card-use"><strong>Use when:</strong> You have an existing AI-Native product and want to add formal contracts.</div>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-icon">🔎</div>
+          <div class="prompt-card-meta">
+            <div class="prompt-card-filename">Contract_Discovery_Protocol.md <span class="prompt-card-new badge-new">NEW</span></div>
+          </div>
+        </div>
+        <h3>Contract Discovery Protocol</h3>
+        <p class="prompt-card-desc">Agent prompt fragment extending the standard Access_Data_Product_Starter with contract awareness. Adds Discovery Tiers 4–7: compliance status, contract promise (fields + rules), validation evidence, and consumer impact. Includes OTel span enrichment pattern.</p>
+        <div class="prompt-card-use"><strong>Use when:</strong> An agent needs to check compliance before consuming a contracted interface.</div>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-icon">✅</div>
+          <div class="prompt-card-meta">
+            <div class="prompt-card-filename">Validate_Contract_Compliance.md <span class="prompt-card-new badge-new">NEW</span></div>
+          </div>
+        </div>
+        <h3>Validate Contract Compliance</h3>
+        <p class="prompt-card-desc">Operational prompt for three scenarios: (A) run a validation cycle with publication gate update, (B) triage an open violation including consumer notification and remediation tracking, (C) audit compliance history for regulatory submissions.</p>
+        <div class="prompt-card-use"><strong>Use when:</strong> Running validations, investigating a violation alert, or preparing audit evidence.</div>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-icon">🛠</div>
+          <div class="prompt-card-meta">
+            <div class="prompt-card-filename">Skill_Conversion_Prompt.md <span class="prompt-card-new badge-updated">UPDATED</span></div>
+          </div>
+        </div>
+        <h3>Skill Conversion Prompt (updated)</h3>
+        <p class="prompt-card-desc">The skill generator now includes Data_Contract_Design_Standard.md as a source document and produces a <code>contract.md</code> module file. Contract decisions use <code>DD-CONTRACT-</code> prefix. Size targets updated to reflect the expanded standard.</p>
+        <div class="prompt-card-use"><strong>Use when:</strong> Regenerating or updating the ai-native-data-product skill after standard changes.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     Section: Review Status
+========================================================= -->
+<section class="section" id="review">
+  <div class="container">
+    <div class="section-label">Team Review</div>
+    <h2 class="section-heading">Review Status</h2>
+
+    <div class="status-grid">
+      <div class="status-cell">
+        <div class="status-cell-label">Branch</div>
+        <div class="status-cell-value"><code>feat/data-contract-design-standard</code></div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">earthshiner/ai-native-data-products</div>
+      </div>
+      <div class="status-cell">
+        <div class="status-cell-label">Status</div>
+        <div class="status-cell-value" style="color:var(--amber);">Draft — not merged to main</div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">Awaiting team review</div>
+      </div>
+      <div class="status-cell">
+        <div class="status-cell-label">Commits</div>
+        <div class="status-cell-value">5 commits on this branch</div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">Design standard, prompts, skill update</div>
+      </div>
+    </div>
+
+    <h3 style="margin: 32px 0 14px;">Key Questions for the Team</h3>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+
+      <div class="question-card">
+        <div class="question-num">1</div>
+        <p class="question-text">The publication gate returns no rows when <code>NON_COMPLIANT</code>. Is <strong>BLOCKING</strong> the right default for all production interfaces, or should we default to <strong>ADVISORY</strong> and let teams opt in to blocking enforcement?</p>
+      </div>
+
+      <div class="question-card">
+        <div class="question-num">2</div>
+        <p class="question-text">The contract floor requires four CRITICAL rules per interface before deployment. Is this too prescriptive? Too lenient? What would you add or remove from the mandatory set?</p>
+      </div>
+
+      <div class="question-card">
+        <div class="question-num">3</div>
+        <p class="question-text">Is the 9-deliverable <code>Add_Contract_To_Data_Product</code> prompt the right granularity for the first implementation? Should we pilot with one or two interfaces before committing to the full 9-deliverable scope?</p>
+      </div>
+
+      <div class="question-card">
+        <div class="question-num">4</div>
+        <p class="question-text">The design adds three new tables to Semantic: <code>contract_server</code>, <code>contract_stakeholder</code>, and <code>contract_tag</code>. Should these be in the first release, or deferred to a follow-up iteration once the core backbone is proven?</p>
+      </div>
+
+      <div class="question-card">
+        <div class="question-num">5</div>
+        <p class="question-text">Are there any external standards or tools from your environment that aren't covered in the integration section? Any proprietary catalogues, lineage tools, or observability platforms we should add?</p>
+      </div>
+
+    </div>
+
+    <div class="feedback-area">
+      <label for="feedback-text">Your comments (copy and email to the team):</label>
+      <textarea id="feedback-text" placeholder="Add your feedback, questions, or concerns here..."></textarea>
+      <button class="copy-btn" id="copy-btn" onclick="copyFeedback()">Copy to clipboard</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer -->
+<footer style="background:var(--primary-dark); color:rgba(255,255,255,0.5); padding:28px 0; font-size:0.8rem; margin-top:0; border-top:1px solid rgba(255,255,255,0.08);">
+  <div class="container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <span>Teradata · AI-Native Data Products · Contract Backbone Design Review</span>
+    <span style="color:rgba(255,255,255,0.3);">Draft — not for distribution · Branch: feat/data-contract-design-standard</span>
+  </div>
+</footer>
+
+<script>
+  /* =========================================================
+     Accordion toggle
+  ========================================================= */
+  function toggleAcc(headerEl) {
+    const item = headerEl.closest('.acc-item');
+    item.classList.toggle('open');
+  }
+
+  /* =========================================================
+     View group accordion toggle
+  ========================================================= */
+  function toggleViewGroup(headerEl) {
+    const group = headerEl.closest('.view-group');
+    group.classList.toggle('open');
+  }
+
+  /* =========================================================
+     Tab switching
+  ========================================================= */
+  function switchTab(tabBarId, panelContainerId, targetPanelId, btnEl) {
+    // Update buttons
+    const tabBar = document.getElementById(tabBarId);
+    tabBar.querySelectorAll('.tab-btn').forEach(function(btn) {
+      btn.classList.remove('active');
+    });
+    btnEl.classList.add('active');
+
+    // Update panels
+    const container = document.getElementById(panelContainerId);
+    container.querySelectorAll('.tab-panel').forEach(function(panel) {
+      panel.classList.remove('active');
+    });
+    document.getElementById(targetPanelId).classList.add('active');
+  }
+
+  /* =========================================================
+     Copy feedback to clipboard
+  ========================================================= */
+  function copyFeedback() {
+    const textarea = document.getElementById('feedback-text');
+    const btn = document.getElementById('copy-btn');
+    if (!textarea.value.trim()) {
+      textarea.focus();
+      return;
+    }
+    navigator.clipboard.writeText(textarea.value).then(function() {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.textContent = 'Copy to clipboard';
+        btn.classList.remove('copied');
+      }, 2000);
+    }).catch(function() {
+      // Fallback for older browsers
+      textarea.select();
+      document.execCommand('copy');
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.textContent = 'Copy to clipboard';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  /* =========================================================
+     Smooth scroll for nav links (offset for fixed nav)
+  ========================================================= */
+  document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+    anchor.addEventListener('click', function(e) {
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        const offset = 72; // nav height + 12px breathing room
+        const top = target.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top: top, behavior: 'smooth' });
+      }
+    });
+  });
+
+  /* =========================================================
+     Active nav link highlighting on scroll
+  ========================================================= */
+  (function() {
+    var sections = ['hero', 'problem', 'design', 'prompts', 'review'];
+    var links = document.querySelectorAll('.nav-links a');
+
+    function onScroll() {
+      var scrollY = window.scrollY + 80;
+      var current = sections[0];
+      sections.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && el.offsetTop <= scrollY) {
+          current = id;
+        }
+      });
+      links.forEach(function(link) {
+        var href = link.getAttribute('href').replace('#', '');
+        if (href === current) {
+          link.style.color = '#FFFFFF';
+          link.style.background = 'rgba(255,255,255,0.12)';
+        } else {
+          link.style.color = '';
+          link.style.background = '';
+        }
+      });
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+</body>
+</html>
