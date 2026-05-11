@@ -41,6 +41,15 @@ NOTE: Documentation is not a standalone module. The documentation tables
 (design memory) are defined in the Memory Module Design Standard (Section 8)
 and deployed as part of the Memory module for each data product.
 
+LAYER 1b: CROSS-CUTTING DESIGN STANDARDS (Apply to All Modules)
+└── Data Contract Design Standard ← Contract-aware interoperability
+    Covers: contract lifecycle, versioning, consumer registration,
+    violation events, external standards integration (ODCS, DPDS,
+    ODPS, DCAT, DataHub, OpenMetadata, OpenLineage, OpenTelemetry)
+    NOTE: Not a seventh module. Semantic stores the contract definition,
+    Observability stores evidence, Memory stores decisions and sign-off,
+    Domain exposes the data, and Access governs consumption.
+
 LAYER 2: ACTUAL DATA PRODUCT DESIGNS (Apply Standards)
 ├── Customer 360 Data Product (uses standards above)
 ├── Fraud Detection Data Product (uses standards above)
@@ -103,7 +112,8 @@ Create data products that agents can **discover, understand, and consume autonom
 4. **Self-Describing**: Data products expose their own semantics, contracts, and relationships
 5. **Agent-Native Design**: Optimize for machine interpretation, not just human readability
 6. **Standards-Driven**: Use Knowledge Stores to ensure consistency and compliance
-7. **Platform-Neutral Design**: The structural standards defined here are platform-agnostic. DDL examples throughout the module design standards use Teradata syntax as the reference implementation. Teams deploying on other platforms should adapt the DDL syntax while preserving the structural intent. Platform-specific implementation guidance is captured in Platform Profiles (see Platform Profiles section).
+7. **Contract-Aware**: Every public-facing output interface carries a registered, versioned, enforceable contract. Contracts are cross-cutting — defined in Semantic, evidenced in Observability, governed in Memory, exposed through Domain, and controlled in Access. See [Data Contract Design Standard](Data_Contract_Design_Standard.md).
+8. **Platform-Neutral Design**: The structural standards defined here are platform-agnostic. DDL examples throughout the module design standards use Teradata syntax as the reference implementation. Teams deploying on other platforms should adapt the DDL syntax while preserving the structural intent. Platform-specific implementation guidance is captured in Platform Profiles (see Platform Profiles section).
 
 ---
 
