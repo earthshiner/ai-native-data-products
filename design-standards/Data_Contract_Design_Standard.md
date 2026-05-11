@@ -1156,7 +1156,15 @@ SELECT
     ,ci.freshness_sla_minutes
     ,ci.availability_sla_pct
     ,ci.validation_status
+    ,ci.publication_status
+    ,ci.publication_gate_mode
+    ,ci.non_compliant_since_dts
     ,ci.last_validated_dts
+    -- Simplified boolean for tools and consumers that expect a single compliance flag.
+    -- is_compliant = 1 means the interface is PUBLISHED and serving data normally.
+    -- is_compliant = 0 covers NON_COMPLIANT, SUSPENDED, and UNPUBLISHED states.
+    -- Use publication_status directly when the reason for non-compliance matters.
+    ,CASE WHEN ci.publication_status = 'PUBLISHED' THEN 1 ELSE 0 END AS is_compliant
 FROM
     {Product}_Semantic.contract AS c
 INNER JOIN {Product}_Semantic.contract_version AS cv
@@ -1169,6 +1177,8 @@ WHERE
     c.is_active = 1
 ;
 ```
+
+> **`is_compliant` vs `publication_status`:** `is_compliant` is a convenience alias — it is `1` when `publication_status = 'PUBLISHED'` and `0` for all other states (`NON_COMPLIANT`, `SUSPENDED`, `UNPUBLISHED`). External tools and catalogue publishers that expect a boolean compliance flag should read `is_compliant`. Internal pipeline logic and dashboards that need to distinguish *why* an interface is non-compliant should read `publication_status` directly.
 
 ---
 
@@ -1504,6 +1514,18 @@ DEFINE → VERSION → REGISTER → VALIDATE → ENFORCE → GATE → ALERT → 
 ```
 publication_gate_mode = BLOCKING  → CRITICAL failure sets NON_COMPLIANT; Access view returns no rows
 publication_gate_mode = ADVISORY  → CRITICAL failure alerts but does not block; document in contract_design_decision
+```
+
+### Compliance Flag
+
+```
+is_compliant = CASE WHEN publication_status = 'PUBLISHED' THEN 1 ELSE 0 END
+
+publication_status  is_compliant  Meaning
+PUBLISHED           1             Validated and serving data normally
+NON_COMPLIANT       0             CRITICAL validation failure — gate active
+SUSPENDED           0             Manually suspended by contract owner
+UNPUBLISHED         0             Not yet through first validation cycle
 ```
 
 ### Contract Floor (mandatory rules per interface)
