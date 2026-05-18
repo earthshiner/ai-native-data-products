@@ -120,9 +120,14 @@ Every AI-Native Data Product creates three standard roles:
 
 | Role | Purpose | Your connecting user should hold |
 |------|---------|----------------------------------|
-| `{Product}_ROLE_AGENT` | AI agents and automated tools | ✅ Yes — use this role |
-| `{Product}_ROLE_READ` | Human analysts and BI tools | ❌ Not for agents |
-| `{Product}_ROLE_ADMIN` | Data product owner / steward | ❌ Not for routine agent use |
+| `{Product}_ROLE_AGENT` | AI agents and automated tools. SELECT on module access databases, plus controlled INSERT write-back to Memory and Observability. | ✅ Yes — use this role |
+| `{Product}_ROLE_READ` | Human analysts and BI tools. SELECT-only access. | ❌ Not for agents |
+| `{Product}_ROLE_ADMIN` | Data product owner / steward. Administrative access. | ❌ Not for routine agent use |
+
+`{Product}_ROLE_AGENT` must not write to Domain or Semantic. Domain is governed by source-system
+ingestion and ETL pipelines; Semantic metadata is governed by the data product design process. Agent
+write-back is limited to Memory (conversation history, learned strategies, design insights) and
+Observability (usage events, quality feedback).
 
 **If you receive `Error 3523` (no SELECT access):** The Access Layer may not have been deployed
 yet, or your service account has not been granted `{Product}_ROLE_AGENT`. Do not attempt to work

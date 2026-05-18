@@ -32,12 +32,18 @@ ai-native-data-products/
 │   ├── Search_Module_Design_Standard.md
 │   ├── Prediction_Module_Design_Standard.md
 │   ├── Observability_Module_Design_Standard.md
-│   └── Memory_Module_Design_Standard.md
+│   ├── Memory_Module_Design_Standard.md
+│   └── Access_Layer_Design_Standard.md
+│
+├── platform-standards/      ← platform-agnostic implementation contracts
+│   ├── Object_Placement_Standard_Spec.md
+│   └── Physical_Storage_Standard_Spec.md
 │
 └── prompts/                 ← how to use the standards
     ├── Skill_Conversion_Prompt.md
     ├── Design_Data_Product_Starter.md
-    └── Access_Data_Product_Starter.md
+    ├── Access_Data_Product_Starter.md
+    └── Apply_Platform_Standards.md
 ```
 
 ---
@@ -147,6 +153,9 @@ autonomous discovery via the Semantic module.
 | Prediction_Module_Design_Standard | 1.6 |
 | Observability_Module_Design_Standard | 1.4 |
 | Memory_Module_Design_Standard | 1.6 |
+| Access_Layer_Design_Standard | 1.0 |
+| Object_Placement_Standard_Spec | 1.0 |
+| Physical_Storage_Standard_Spec | 1.0 |
 
 ---
 

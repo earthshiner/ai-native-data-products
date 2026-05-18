@@ -344,6 +344,15 @@
       line-height: 1.7;
     }
 
+    p code,
+    li code,
+    .code-note code {
+      color: #0E2A33;
+      background: rgba(25, 111, 107, 0.08);
+      border-radius: 4px;
+      padding: 0.05rem 0.25rem;
+    }
+
     .code-comment { color: #6EE7B7; }
     .code-keyword { color: #93C5FD; }
     .code-ident   { color: #FDE68A; }
@@ -429,6 +438,7 @@
       <li><a href="#lifecycle-flow">The Lifecycle Flow — 9 Steps</a></li>
       <li><a href="#role-matrix">The Role Matrix</a></li>
       <li><a href="#module-breakdown">Read vs Write Breakdown per Module</a></li>
+      <li><a href="#contract-artifacts">Contract and Standards Artifacts</a></li>
       <li><a href="#dcl-pattern">Implications for the Access Layer DCL</a></li>
     </ol>
   </nav>
@@ -822,9 +832,72 @@
     </div><!-- /.module-grid -->
   </section>
 
-  <!-- ── Section 5: DCL pattern ─────────────────────────────────────────── -->
+  <!-- ── Section 5: Contract artifacts ──────────────────────────────────── -->
+  <section id="contract-artifacts">
+    <h2>5. Contract and Standards Artifacts</h2>
+    <p class="section-intro">
+      The lifecycle above assumes that standards and contracts are not just narrative documents. They are deployed as queryable artifacts that agents can read, validate, and write evidence against.
+    </p>
+
+    <div class="flow">
+      <div class="step-card">
+        <div class="step-number">A</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Standard is authored</span>
+            <span class="badge badge-memory">Memory</span>
+            <span class="badge op-write">DESIGN CAPTURE</span>
+          </div>
+          <ul class="step-bullets">
+            <li>Each standard produces one or more <code>{Product}_Memory.Design_Decision</code> INSERT statements that capture the architectural choice, rationale, and accepted status.</li>
+            <li>The Access Layer produces <code>DD-ACCESS-001</code>; module standards produce their required module design decisions using the same documentation capture protocol.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-connector" aria-hidden="true"></div>
+
+      <div class="step-card">
+        <div class="step-number">B</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Contract interface is registered</span>
+            <span class="badge badge-semantic">Semantic</span>
+            <span class="badge op-write">DEPLOYMENT CAPTURE</span>
+          </div>
+          <ul class="step-bullets">
+            <li>Contracted interfaces are registered in the Semantic module so agents can discover the approved views and expected interface shape.</li>
+            <li>Agents read <code>{Product}_Semantic_V.contract_current_interface</code> before querying business data.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-connector" aria-hidden="true"></div>
+
+      <div class="step-card">
+        <div class="step-number">C</div>
+        <div class="step-body">
+          <div class="step-header">
+            <span class="step-name">Runtime evidence is recorded</span>
+            <span class="badge badge-observability">Observability</span>
+            <span class="badge op-write">VALIDATION CAPTURE</span>
+          </div>
+          <ul class="step-bullets">
+            <li>Validation runs, SLA checks, and usage telemetry are written to Observability as operational evidence.</li>
+            <li>Agents read <code>{Product}_Observability_V.contract_latest_validation</code> to confirm the interface is currently compliant before using it.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-note">
+      In other words: the standards explain the required pattern, the generated SQL INSERTs make that pattern part of product memory, Semantic exposes the current contract interfaces, and Observability records whether those contracts are currently healthy.
+    </div>
+  </section>
+
+  <!-- ── Section 6: DCL pattern ─────────────────────────────────────────── -->
   <section id="dcl-pattern">
-    <h2>5. Implications for the Access Layer DCL</h2>
+    <h2>6. Implications for the Access Layer DCL</h2>
     <p class="section-intro">
       The write-back grants to Memory and Observability are what separates ROLE_AGENT from ROLE_READ at the database level. This is a material permission difference — not just an audit label.
     </p>
