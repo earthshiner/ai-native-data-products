@@ -1,5 +1,5 @@
 # Memory Module Design Standard
-## AI-Native Data Product Architecture - Version 1.7
+## AI-Native Data Product Architecture - Version 1.8
 
 ---
 
@@ -7,9 +7,9 @@
 
 | Attribute | Value |
 |-----------|-------|
-| **Version** | 1.7 |
+| **Version** | 1.8 |
 | **Status** | STANDARD |
-| **Last Updated** | 2026-03-20 |
+| **Last Updated** | 2026-05-29 |
 | **Owner** | Nathan Green, Worldwide Data Architecture Team, Teradata |
 | **Scope** | Memory Module (Agent State, Learning & Documentation Sub-Module) |
 | **Type** | Design Standard (Structural Requirements) |
@@ -1399,6 +1399,8 @@ COMMENT ON COLUMN Memory.Business_Glossary.is_active IS
 
 Tested, reusable query patterns.
 
+`Query_Cookbook` entries are design memory, so they need the same lightweight lifecycle controls as other documentation records. Recipes should be retired or superseded by setting the previous row inactive and inserting a corrected successor row, rather than overwriting the original text in place. This preserves the history of what guidance was available at a point in time, allows consumers to query only current active recipes, and gives data product owners an auditable path for correcting query guidance as the physical design evolves.
+
 ```sql
 CREATE TABLE Memory.Query_Cookbook (
     recipe_key              BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -1431,6 +1433,16 @@ COMMENT ON COLUMN Memory.Query_Cookbook.complexity IS
 'Query complexity — SIMPLE, MODERATE, COMPLEX, ADVANCED';
 COMMENT ON COLUMN Memory.Query_Cookbook.sql_template IS
 'SQL with :parameter placeholders — agents substitute values at runtime';
+COMMENT ON COLUMN Memory.Query_Cookbook.is_active IS
+'1 = active recipe available for use, 0 = retired or superseded recipe';
+COMMENT ON COLUMN Memory.Query_Cookbook.valid_from IS
+'Date this recipe version becomes valid for consumers';
+COMMENT ON COLUMN Memory.Query_Cookbook.valid_to IS
+'Date this recipe version stops being valid; use DATE ''9999-12-31'' for current open-ended versions';
+COMMENT ON COLUMN Memory.Query_Cookbook.created_timestamp IS
+'Timestamp when this recipe version was inserted';
+COMMENT ON COLUMN Memory.Query_Cookbook.updated_timestamp IS
+'Timestamp when this recipe version was last maintained';
 ```
 
 **Standard ERD Recipe (`QC-SEMANTIC-002`)**
@@ -1443,7 +1455,8 @@ INSERT INTO Memory.Query_Cookbook (
     target_module, sql_template, parameter_descriptions,
     performance_notes, complexity,
     source_module, module_version,
-    is_active, valid_from, valid_to
+    is_active, valid_from, valid_to,
+    created_timestamp, updated_timestamp
 ) VALUES (
     'QC-SEMANTIC-002',
     'Generate entity-relationship diagram from table_relationship',
@@ -1476,7 +1489,8 @@ ORDER BY r.from_table, r.to_table;
     'Lightweight query on a small metadata table — no performance concerns.',
     'SIMPLE',
     'SEMANTIC', :module_version,
-    1, CURRENT_DATE, DATE '9999-12-31'
+    1, CURRENT_DATE, DATE '9999-12-31',
+    CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6)
 );
 ```
 
@@ -1593,6 +1607,8 @@ ORDER BY version_number, created_timestamp;
 ```
 
 Same temporal pattern applies to `Business_Glossary`, `Query_Cookbook`, and `Implementation_Note`.
+
+For `Query_Cookbook`, consumers should select rows where `is_active = 1` and the required as-of date falls between `valid_from` and `valid_to`. Corrections to recipe text, SQL templates, object names, or performance notes should expire the current row and insert a new row with the corrected content, preserving the previous row for historical explainability.
 
 ### 8.6 Standard Views
 
@@ -1793,6 +1809,7 @@ Discovered Patterns:    Indefinite if validated
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
+| 1.8 | 2026-05-29 | Clarified `Query_Cookbook` lifecycle requirements. Documented `is_active`, `valid_from`, `valid_to`, `created_timestamp`, and `updated_timestamp` as the standard columns for active-row filtering, temporal validity, auditability, and append-oriented recipe correction. Updated the standard ERD recipe seed template to populate timestamp columns explicitly. | Paul Dancer, Worldwide Data Architecture Team, Teradata |
 | 1.7 | 2026-04-15 | Added `deployment_status VARCHAR(20) NOT NULL DEFAULT 'DEPLOYED'` to `Module_Registry` DDL, enabling DEPLOYED/PLANNED/DEPRECATED lifecycle tracking for all modules considered during design. Expanded Section 7 with Minimum Seed Data Requirements (7.2), Deviation Documentation Convention (7.3), updated Design Checklist (7.4), and Quality Criteria (7.5). Key additions: Module_Registry row required for every module considered; Design_Decision entries required for deferred/excluded modules and all standards deviations; ERD generation recipe (QC-SEMANTIC-002) mandatory; cross-module cookbook recipes required per deployed module pair. Added standard ERD recipe INSERT template to Section 8.4. | Nathan Green, Worldwide Data Architecture Team, Teradata |
 | 1.6 | 2026-03-20 | Fixed = 'Y' filter value in Search integration example (Section 6.3) to = 1. | Nathan Green, Worldwide Data Architecture Team, Teradata |
 | 1.5 | 2026-03-20 | Revised Documentation Sub-Module (Section 8) to align with data product self-containment principle. Removed shared dp_documentation cross-product database pattern. Documentation tables now reside in the same {ProductName}_Memory database as runtime memory tables, framed as "design memory" alongside "runtime memory". Removed data_product column from all 6 table DDL definitions. Removed cross-product (data_product = 'ALL') pattern. Simplified temporal queries. Collapsed 3 workflows to 2 (Bootstrap removed — documentation tables created as part of Memory DDL). Updated Section 6.5 example INSERT to use Memory.Design_Decision. | Nathan Green, Worldwide Data Architecture Team, Teradata |
