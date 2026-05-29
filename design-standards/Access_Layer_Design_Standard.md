@@ -32,7 +32,7 @@ Three roles are created per data product. Naming convention: `{ProductName}_ROLE
 | Role | Intended consumers | Scope |
 |------|--------------------|-------|
 | `{ProductName}_ROLE_READ` | Analysts, BI tools, ad-hoc SQL users | SELECT on module access databases |
-| `{ProductName}_ROLE_AGENT` | AI agents, MCP servers, automated tools | SELECT on module access databases |
+| `{ProductName}_ROLE_AGENT` | AI agents, MCP servers, automated tools | SELECT on all module access databases. INSERT on Memory module (conversation history, learned strategies, design insights). INSERT on Observability module (usage events, quality feedback). Kept separate from ROLE_READ to allow independent lifecycle management and these extended write-back permissions. |
 | `{ProductName}_ROLE_ADMIN` | Data product owner, data steward | SELECT on all databases including any separate base table databases |
 
 ### 3.1 Why ROLE_AGENT is separate from ROLE_READ
@@ -41,7 +41,9 @@ Three roles are created per data product. Naming convention: `{ProductName}_ROLE
 
 1. **Independent lifecycle** — agent access can be suspended, extended, or revoked without affecting human analyst access.
 2. **Selective extension** — some products may grant agents write-back capability (for example, INSERT to Memory module tables to record agent interactions). This extension can be applied to `ROLE_AGENT` without broadening `ROLE_READ`.
-3. **Audit clarity** — agent-originated queries are separately auditable when the connecting user holds a distinct role.
+3. **Write-back permissions** — ROLE_AGENT requires INSERT on the Memory and Observability databases so that agents can record their interactions, learned strategies, and quality signals. ROLE_READ must never have these permissions; human analysts do not write agent session data or telemetry.
+4. **Boundary clarity** — granting write-back to ROLE_AGENT and not ROLE_READ makes the permission boundary explicit in the database role model itself, not just in application logic. The access control layer enforces the architectural principle.
+5. **Audit clarity** — agent-originated queries are separately auditable when the connecting user holds a distinct role.
 
 ---
 
@@ -64,15 +66,21 @@ Delaying all grants until every module is fully deployed is an anti-pattern: con
 
 | Module | ROLE_READ | ROLE_AGENT | ROLE_ADMIN |
 |--------|-----------|------------|------------|
-| Semantic | ✅ Phase 1.5 | ✅ Phase 1.5 | ✅ Phase 1.5 |
-| Memory | ✅ Phase 1.5 | ✅ Phase 1.5 | ✅ Phase 1.5 |
-| Domain | ✅ Phase 2.5 | ✅ Phase 2.5 | ✅ Phase 2.5 |
-| Observability | ✅ Phase 2.5 | ✅ Phase 2.5 | ✅ Phase 2.5 |
-| Search | ✅ when deployed | ✅ when deployed | ✅ when deployed |
-| Prediction | ✅ when deployed | ✅ when deployed | ✅ when deployed |
+| Semantic (SELECT) | ✅ Phase 1.5 | ✅ Phase 1.5 | ✅ Phase 1.5 |
+| Memory (SELECT) | ✅ Phase 1.5 | ✅ Phase 1.5 | ✅ Phase 1.5 |
+| Memory (INSERT) | ❌ | ✅ Phase 1.5 | ✅ Phase 1.5 |
+| Domain (SELECT) | ✅ Phase 2.5 | ✅ Phase 2.5 | ✅ Phase 2.5 |
+| Observability (SELECT) | ✅ Phase 2.5 | ✅ Phase 2.5 | ✅ Phase 2.5 |
+| Observability (INSERT) | ❌ | ✅ Phase 2.5 | ✅ Phase 2.5 |
+| Search (SELECT) | ✅ when deployed | ✅ when deployed | ✅ when deployed |
+| Prediction (SELECT) | ✅ when deployed | ✅ when deployed | ✅ when deployed |
+| Domain (INSERT/UPDATE) | ❌ | ❌ | ✅ |
+| Semantic (INSERT/UPDATE) | ❌ | ❌ | ✅ |
 | Base table databases (if separate) | ❌ | ❌ | ✅ |
 
 Grants to Search and Prediction are applied as those modules are deployed, following the same Phase 2.5 pattern.
+
+> **Why agents do not write to Domain or Semantic:** Domain data originates from authoritative source systems via governed ETL pipelines — agent write-back would bypass data governance. Semantic metadata is maintained by data product designers; agents read the schema but do not define it.
 
 ---
 
@@ -119,6 +127,9 @@ GRANT SELECT ON {ProductName}_Memory   TO {ProductName}_ROLE_READ;
 GRANT SELECT ON {ProductName}_Memory   TO {ProductName}_ROLE_AGENT;
 GRANT SELECT ON {ProductName}_Memory   TO {ProductName}_ROLE_ADMIN;
 
+-- Agent write-back to Memory: record conversations, strategies, and design insights
+GRANT INSERT ON {ProductName}_Memory   TO {ProductName}_ROLE_AGENT;
+
 -- ── Phase 2.5 — apply after Domain + Observability are deployed ───────────────
 
 GRANT SELECT ON {ProductName}_Domain        TO {ProductName}_ROLE_READ;
@@ -128,6 +139,9 @@ GRANT SELECT ON {ProductName}_Domain        TO {ProductName}_ROLE_ADMIN;
 GRANT SELECT ON {ProductName}_Observability TO {ProductName}_ROLE_READ;
 GRANT SELECT ON {ProductName}_Observability TO {ProductName}_ROLE_AGENT;
 GRANT SELECT ON {ProductName}_Observability TO {ProductName}_ROLE_ADMIN;
+
+-- Agent write-back to Observability: record usage events and quality feedback
+GRANT INSERT ON {ProductName}_Observability TO {ProductName}_ROLE_AGENT;
 
 -- ── When Search is deployed ───────────────────────────────────────────────────
 
@@ -182,6 +196,10 @@ The two-phase structure is documented in the file's comments. How the two phases
 
 Deployment of the Access Layer must produce a `Design_Decision` record in `{ProductName}_Memory.Design_Decision`. This is mandatory under the Documentation Capture Protocol in the Master Design Standard.
 
+The design standard is the normative human-readable specification; the generated SQL below is the deployable memory artifact. In a data product implementation this record is delivered with the product's Memory documentation inserts, alongside the module-level `Design_Decision` records and any contract/interface records generated by the Semantic and Observability modules.
+
+This means the access contract is not only described in this Markdown file. It is also captured inside the data product itself so agents can read the accepted role model, permission boundary, and rationale at runtime.
+
 ```sql
 INSERT INTO {ProductName}_Memory.Design_Decision
 (
@@ -212,6 +230,10 @@ VALUES
      {ProductName}_ROLE_AGENT for AI agents and automated tools,
      {ProductName}_ROLE_ADMIN for the product owner and data steward.
      All consumer roles receive SELECT on the module access databases.
+     ROLE_AGENT additionally receives INSERT on Memory for conversations,
+     learned strategies, and agent design insights, and INSERT on
+     Observability for usage events and quality feedback.
+     ROLE_AGENT does not receive INSERT or UPDATE on Domain or Semantic.
      ROLE_ADMIN additionally receives access to any separate base table
      databases.',
 
@@ -227,8 +249,10 @@ VALUES
      and prevents role-based revocation.',
 
     'Keeping ROLE_AGENT separate from ROLE_READ enables independent lifecycle
-     management of AI tooling access and permits selective extension
-     (e.g., agent write-back to Memory) without broadening analyst access.',
+     management of AI tooling access and permits agent write-back to Memory
+     and Observability without broadening analyst access. Domain and Semantic
+     remain read-only for agents because business data and metadata are
+     governed through controlled design and ETL processes.',
 
     'ACCEPTED',
     'SECURITY',
@@ -258,8 +282,10 @@ The assignment of specific users or service accounts to those roles is an **oper
 - [ ] `{ProductName}_ROLE_READ` created with COMMENT
 - [ ] `{ProductName}_ROLE_AGENT` created with COMMENT
 - [ ] `{ProductName}_ROLE_ADMIN` created with COMMENT
-- [ ] Phase 1.5 grants applied (Semantic, Memory) immediately after Phase 1 deployed
-- [ ] Phase 2.5 grants applied (Domain, Observability) immediately after Phase 2 deployed
+- [ ] Phase 1.5 grants applied (Semantic, Memory SELECT) immediately after Phase 1 deployed
+- [ ] Phase 1.5 INSERT grant on Memory applied to ROLE_AGENT (agent write-back for conversations and learned strategies)
+- [ ] Phase 2.5 grants applied (Domain, Observability SELECT) immediately after Phase 2 deployed
+- [ ] Phase 2.5 INSERT grant on Observability applied to ROLE_AGENT (agent write-back for usage events and quality feedback)
 - [ ] Search and Prediction grants applied as each is deployed
 - [ ] Service accounts and users assigned to appropriate roles for this environment
 - [ ] `DD-ACCESS-001` Design_Decision record inserted into `{ProductName}_Memory`
