@@ -18,8 +18,12 @@
   every read from data_lineage below carries WHERE dl.is_active = 1.
 
   Template variables:
-    product   : as in 01-graph-tables.sql.j2.
-    graph_key : as in 01-graph-tables.sql.j2.
+    product                : as in 01-graph-tables.sql.j2.
+    graph_key              : as in 01-graph-tables.sql.j2.
+    column_lineage_enabled : as in 04-catalogue-seed.sql.j2 - gates COLUMN node and
+                              derives_column edge population (steps 3 and 7) so a product
+                              that has not enabled the column-lineage facet never loads
+                              column-grain rows even if data_lineage happens to carry them.
 #}
 -- 1. TABLE nodes: every source and target table in an active lineage flow ----------
 INSERT INTO Graphs_{{ graph_key }}_STD_0_T.graph_nodes (natural_key, node_label, category)
@@ -51,7 +55,8 @@ WHERE dl.is_active = 1 AND dl.job_name IS NOT NULL
     WHERE n.natural_key = 'JOB::' || dl.job_name
 );
 
--- 3. COLUMN nodes: only where column-level lineage is populated (DEC-GRAPH-COLUMN-LINEAGE) --
+{%- if column_lineage_enabled %}
+-- 3. COLUMN nodes: only where the column-lineage facet is enabled (DEC-GRAPH-COLUMN-LINEAGE) --
 INSERT INTO Graphs_{{ graph_key }}_STD_0_T.graph_nodes (natural_key, node_label, category)
 SELECT DISTINCT
        'COLUMN::' || c.container_name || '.' || c.object_name || '.' || c.column_name
@@ -70,6 +75,7 @@ WHERE NOT EXISTS (
     SELECT 1 FROM Graphs_{{ graph_key }}_STD_0_T.graph_nodes AS n
     WHERE n.natural_key = 'COLUMN::' || c.container_name || '.' || c.object_name || '.' || c.column_name
 );
+{%- endif %}
 
 -- 4. AGENT nodes: every agent that has recorded an outcome -------------------------
 INSERT INTO Graphs_{{ graph_key }}_STD_0_T.graph_nodes (natural_key, node_label, category)
@@ -136,6 +142,7 @@ WHERE dl.is_active = 1 AND dl.source_table IS NOT NULL AND dl.job_name IS NULL
     WHERE e.source_node_id = src.node_id AND e.target_node_id = tgt.node_id AND e.edge_type = 'produces'
 );
 
+{%- if column_lineage_enabled %}
 -- 7. `derives_column` edges: direct source column -> target column -----------------
 INSERT INTO Graphs_{{ graph_key }}_STD_0_T.graph_edges
       (source_node_id, target_node_id, edge_type, edge_weight, lineage_id)
@@ -150,6 +157,7 @@ WHERE dl.is_active = 1 AND dl.source_column IS NOT NULL AND dl.target_column IS 
     SELECT 1 FROM Graphs_{{ graph_key }}_STD_0_T.graph_edges AS e
     WHERE e.source_node_id = src.node_id AND e.target_node_id = tgt.node_id AND e.edge_type = 'derives_column'
 );
+{%- endif %}
 
 -- 8. `accessed_by` edges: table -> agent, exploding the comma-separated
 --    AgentOutcome.tables_accessed (table-level per INV-OBS-002) ---------------------

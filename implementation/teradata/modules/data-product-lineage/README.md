@@ -26,13 +26,14 @@ This module's package must declare the shared `graph-platform` package and this 
 | `05-load-lineage.sql.j2` | Set-based, idempotent load from `{{ product }}_Observability.data_lineage` / `.agent_outcome` into this package's node/edge tables. |
 | `06-access.dcl.sql.j2` | Implied grants, this graph's `R_Graphs_{{ graph_key }}_READ` role, and registration into the shared `R_Graphs_USR_APP` consumer role. |
 
-**Column-level lineage.** `data_lineage.source_column`/`.target_column` (added to [`modules/observability/02-lineage-tables.sql.j2`](../observability/02-lineage-tables.sql.j2)) are optional and NULL for table-level flows. Populate them only if `DEC-GRAPH-COLUMN-LINEAGE` is settled toward column-grain tracing for this product; the load path emits `COLUMN` nodes and `derives_column` edges only where both are non-null.
+**Column-level lineage (`column-lineage` facet).** `data_lineage.source_column`/`.target_column` (added to [`modules/observability/02-lineage-tables.sql.j2`](../observability/02-lineage-tables.sql.j2)) are optional and NULL for table-level flows. Enable the facet — pass `column_lineage_enabled=true` to `04-catalogue-seed.sql.j2` and `05-load-lineage.sql.j2` — only if `DEC-GRAPH-COLUMN-LINEAGE` is settled toward column-grain tracing for this product; the flag gates the `COLUMN` role and `derives_column` relationship/trace-leg registration in the catalogue seed and the `COLUMN` node / `derives_column` edge population in the load path together, so `ColumnGrainLineageTraversal` (see design §9.1) is only ever advertised when it is actually populated.
 
 ## Capability bindings
 
 | Capability (design) | Teradata binding |
 |---|---|
 | `GraphNativeLineageTraversal` | `Graphs_{{ graph_key }}_ACL_0_V.*`, registered in `Graphs_CAT_STD_0_T.graph_registry`. |
+| `ColumnGrainLineageTraversal` | `column-lineage` facet only: `COLUMN` role and `derives_column` relationship in `Graphs_CAT_STD_0_T.graph_role`/`.graph_relationship`, populated by `05-load-lineage.sql.j2` when `column_lineage_enabled`. |
 | `RichMetadata` | `COMMENT ON TABLE` / `COMMENT ON COLUMN` on every object in `01-graph-tables.sql.j2`. |
 
 ## Invariants → checks

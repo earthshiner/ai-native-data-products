@@ -85,7 +85,7 @@ Entity: DataLineage               [kind: Record]  // extended, not replaced
   target_column: ShortText [optional]  // NULL for table-level flows
 ```
 
-`NULL` in both means a table-level flow (unchanged behaviour); populated means a column-level flow. This is additive: existing rows and existing consumers of `DataLineage` (including `lineage_graph`) are unaffected. A `column` node and `derives_column` edge are emitted by the load path only where both columns are non-null.
+`NULL` in both means a table-level flow (unchanged behaviour); populated means a column-level flow. This is additive: existing rows and existing consumers of `DataLineage` (including `lineage_graph`) are unaffected. A `column` node and `derives_column` edge are emitted by the load path only where both columns are non-null, and only where the product has enabled the `column-lineage` facet (§9.1) — a product that has not opted in does not populate these columns, per the Designer Responsibilities checklist (§12).
 
 ### 4.3 Edge types
 
@@ -165,11 +165,23 @@ Registered in `graph_trace_profile`:
 
 Data Product Lineage is an **optional exposure layer**, not a core module: a product can be a complete AI-Native Data Product without it. It hard-depends on Observability for its source data and on the external `graph-platform` for its runtime.
 
+### 9.1 Facets
+
+The module is one base capability plus one facet that a product enables independently (see the [composition mechanism](../core/DESIGN_LANGUAGE.md)):
+
+| Facet | Holds | Provides |
+|---|---|---|
+| *(base, always present)* | Table/job nodes, `produces` edges, access edges (§4.1, §4.3). | `GraphNativeLineageTraversal`. |
+| **`column-lineage`** | Populated `DataLineage.source_column`/`.target_column` (§4.2); `COLUMN` nodes and `derives_column` edges (§4.1, §4.3). | `ColumnGrainLineageTraversal`, catalogue-registered so a consumer can discover it without querying the graph. |
+
+A product that does not enable `column-lineage` stays table-grain only: it does not populate the column extension, and its catalogue registration (§7) omits the `derives_column` relationship and `COLUMN` role, so an agent can tell the capability is absent from the catalogue alone rather than by tracing an empty result.
+
 **Provides:**
 
-| Capability | Made available to |
-|---|---|
-| `GraphNativeLineageTraversal` | Teradata Graph Explorer and any agent/analyst using it: upstream/downstream trace, impact analysis, and access-path traversal over this product's lineage. |
+| Capability | Facet | Made available to |
+|---|---|---|
+| `GraphNativeLineageTraversal` | *(base)* | Teradata Graph Explorer and any agent/analyst using it: upstream/downstream trace, impact analysis, and access-path traversal over this product's lineage. |
+| `ColumnGrainLineageTraversal` | `column-lineage` | Teradata Graph Explorer and any agent/analyst using it: column-to-column derivation trace, in addition to table-grain trace. |
 
 **Requires:**
 
@@ -202,12 +214,12 @@ Data Product Lineage is an **optional exposure layer**, not a core module: a pro
 
 ## 12. Designer Responsibilities
 
-**Designers supply:** the graph key for their product; whether `query_session` nodes are needed at all; the load cadence; whether column-level lineage is populated (many products may stay table-level only); retention/versioning policy for the graph if it diverges from Observability's.
+**Designers supply:** the graph key for their product; whether `query_session` nodes are needed at all; the load cadence; whether the `column-lineage` facet is enabled (many products may stay table-level only); retention/versioning policy for the graph if it diverges from Observability's.
 
 **Design review checklist:**
 
 - [ ] Graph key chosen and unique across the estate; no cross-product graph created without a separate federated design (`DEC-GRAPH-SCOPE`).
-- [ ] `DataLineage` column extension applied only if column-level lineage is in scope for this product.
+- [ ] `column-lineage` facet enabled only if column-level lineage is in scope for this product; `DataLineage` column extension populated and catalogue rows (§9.1) registered together, never one without the other.
 - [ ] Load path only reads Observability; never writes to it (`INV-DPL-001`).
 - [ ] Only active lineage definitions loaded (`INV-DPL-004`).
 - [ ] Catalogue rows (`graph_registry`, `graph_relationship`, `graph_role`, `graph_trace_profile`) registered before the ACL views are published.
@@ -219,7 +231,7 @@ Data Product Lineage is an **optional exposure layer**, not a core module: a pro
 | Decision | Recommended | Settle it by asking |
 |---|---|---|
 | `DEC-GRAPH-SCOPE` | one graph per data product | Already settled by this standard (§5); revisit only when a genuine cross-product federated graph is separately designed. |
-| `DEC-GRAPH-COLUMN-LINEAGE` | omit unless requested | Does any consumer need column-grain trace, or is table-grain sufficient? |
+| `DEC-GRAPH-COLUMN-LINEAGE` | omit the `column-lineage` facet unless requested | Does any consumer need column-grain trace, or is table-grain sufficient? |
 | `DEC-GRAPH-SESSION-NODES` | omit unless requested | Is session-level access traversal (`query_session` nodes) actually queried, or does `agent`-level suffice? |
 | `DEC-GRAPH-LOAD-CADENCE` | same cadence as lineage capture | Does graph-explorer need near-real-time lineage, or is a scheduled batch load sufficient? |
 

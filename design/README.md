@@ -50,7 +50,7 @@ Generated from document frontmatter by [`tooling/catalogue`](../tooling/catalogu
 
 | Document | Anchor | Status | Provides | Requires | Decisions |
 |---|---|---|---|---|---|
-| [Data Product Lineage Module](modules/data-product-lineage.md) | `data-product-lineage` | standard | `GraphNativeLineageTraversal` | `AgentOutcomeCapture`, `LineageCapture`, `RichMetadata` | - |
+| [Data Product Lineage Module](modules/data-product-lineage.md) | `data-product-lineage` | standard | `ColumnGrainLineageTraversal`, `GraphNativeLineageTraversal` | `AgentOutcomeCapture`, `LineageCapture`, `RichMetadata` | - |
 | [Domain Module](modules/domain.md) | `domain` | standard | `AccessView`, `CurrentStateFilter`, `EntityJoinBack`, `NaturalKeyLookup`, `PointInTimeReconstruction`, `SoftDelete` | `DocumentationCapture`, `MetadataCoverageCheck`, `RichMetadata`, `SemanticRegistration`, `SurrogateKeyAllocation` | `DEC-TEMPORAL-PATTERN`, `DEC-COLUMN-STRATEGY`, `DEC-SURROGATE-ALLOCATION`, `DEC-DELETE-STRATEGY`, `DEC-TIMESTAMP-ZONE` |
 | [Memory Module](modules/memory.md) | `memory` | standard | `AgentContinuity`, `DocumentationCapture` | `DocumentationCapture`, `EntityJoinBack`, `NearestNeighbors`, `QualityScore`, `RichMetadata`, `SemanticRegistration` | `DEC-TEMPORAL-PATTERN`, `DEC-DELETE-STRATEGY`, `DEC-TIMESTAMP-ZONE` |
 | [Observability Module](modules/observability.md) | `observability` | standard | `AgentOutcomeCapture`, `ChangeEventCapture`, `LineageCapture`, `QualityScore` | `DocumentationCapture`, `EntityJoinBack`, `RichMetadata`, `SemanticRegistration` | `DEC-QUALITY-STORAGE`, `DEC-AUDIT-RETENTION`, `DEC-TIMESTAMP-ZONE` |

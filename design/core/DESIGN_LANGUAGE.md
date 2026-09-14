@@ -262,6 +262,7 @@ A design document lists the capabilities it requires. Each platform implementati
 | `ApproxIndex{IVF\|HNSW}` | *(Optional)* Accelerate `NearestNeighbors` with an approximate index of the named family. | IVF/KMEANS index; HNSW graph index. |
 | `Embed(text, model)` | Produce a `Vector[dim]` for `text` using the named embedding `model`. | in-database embedding; external embedding API. |
 | `GraphNativeLineageTraversal` | Traverse a product's lineage and access history as a graph: upstream/downstream trace, impact analysis, and access-path traversal over nodes and directed edges. | graph-explorer-conformant node/edge adapter views plus catalogue registration. |
+| `ColumnGrainLineageTraversal` | *(Optional)* Traverse column-to-column derivation edges within a product's lineage graph, in addition to table-grain trace. | graph-explorer `COLUMN` node category and `derives_column` edge type, catalogue-registered only where the providing module's column-lineage facet is enabled. |
 
 A capability marked *optional* (like `ApproxIndex`) may be unsatisfied on a given platform without breaking conformance: the design must not assume it is always present. This matters where platforms genuinely differ (e.g. in-database `Embed` exists on some platforms and is API-only on others): declare such capabilities optional or pluggable rather than assumed, so a "platform-agnostic" design does not quietly encode one platform's assumptions.
 
