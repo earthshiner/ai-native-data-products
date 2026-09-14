@@ -8,6 +8,9 @@
   by its children, so a re-run never leaves an orphaned or half-updated graph.
 
   Template variables:
+    product                : as in 05-graph-tables.sql.j2. Used only to locate this
+                            product's own Semantic.data_product_map row for the
+                            graph_key write-back at the end of this file.
     graph_key             : as in 05-graph-tables.sql.j2.
     display_name          : human picker label, e.g. "Demo Lineage" (<=128 chars).
     description           : one-line domain description (<=512 chars).
@@ -106,3 +109,13 @@ VALUES (
     , 'downstream', 'accessed_by,queried_in', 'QUERY_SESSION', NULL
     , 'No recorded access for {name}.', NULL, 30
 );
+
+-- Write the registered graph_key back onto this product's own OBSERVABILITY row
+-- (Teradata/ai-native-data-products#65) so a tool that only knows the product prefix
+-- can resolve its graph without guessing a naming convention. Kept in step with the
+-- registry row above: this template is the only place graph_key is registered, so
+-- there is one seed to re-run, never a separate write-back to fall out of sync.
+UPDATE {{ product }}_Semantic.data_product_map
+   SET graph_key = '{{ graph_key }}'
+ WHERE UPPER(TRIM(module_name)) = 'OBSERVABILITY'
+   AND COALESCE(is_active, 1) = 1;

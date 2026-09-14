@@ -14,6 +14,7 @@ CREATE TABLE {{ product }}_Semantic.data_product_map (
     module_version VARCHAR(20),
     deployment_status VARCHAR(20),          -- DEPLOYED, PLANNED, DEPRECATED
     deployed_dts TIMESTAMP(6) WITH TIME ZONE,
+    graph_key VARCHAR(50),                  -- Observability graph-lineage facet only; NULL unless enabled
     is_active BYTEINT NOT NULL DEFAULT 1,
 {{ tlm.columns('CURRENT_STATE', pad=8) }}
 )
@@ -30,6 +31,7 @@ COMMENT ON COLUMN {{ product }}_Semantic.data_product_map.table_prefix IS 'Table
 COMMENT ON COLUMN {{ product }}_Semantic.data_product_map.module_version IS 'Module design-standard version.';
 COMMENT ON COLUMN {{ product }}_Semantic.data_product_map.deployment_status IS 'DEPLOYED, PLANNED, DEPRECATED.';
 COMMENT ON COLUMN {{ product }}_Semantic.data_product_map.deployed_dts IS 'When the module was deployed.';
+COMMENT ON COLUMN {{ product }}_Semantic.data_product_map.graph_key IS 'This product''s Graphs_CAT_STD_0_T registration key, for the OBSERVABILITY row, when the graph-lineage facet is enabled - NULL otherwise.';
 COMMENT ON COLUMN {{ product }}_Semantic.data_product_map.is_active IS '1 = active, 0 = deprecated.';
 {{ tlm.comments(product ~ '_Semantic.data_product_map', 'CURRENT_STATE') }}
 

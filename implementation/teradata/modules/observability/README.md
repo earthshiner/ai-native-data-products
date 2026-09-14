@@ -33,7 +33,7 @@ Binds this module's lineage and access records to the external **Teradata Graph 
 | `05-graph-tables.sql.j2` | `Graphs_{{ graph_key }}_STD_0_T.graph_nodes` / `.graph_edges` — this facet's own data plane. |
 | `06-graph-locking-views.sql.j2` | `Graphs_{{ graph_key }}_STD_0_V.*` — governed 1:1 locking views over the base tables. |
 | `07-graph-acl-views.sql.j2` | `Graphs_{{ graph_key }}_ACL_0_V.graph_nodes` / `.graph_edges` / `.graph_edges_bi` — **the contract surface**; the only views a consumer binds to. |
-| `08-catalogue-seed.sql.j2` | Idempotent seed of the shared `Graphs_CAT_STD_0_T` registry, relationship/role vocabularies, and trace profiles. Takes `column_lineage_enabled` to gate the `column-lineage` facet's catalogue rows. |
+| `08-catalogue-seed.sql.j2` | Idempotent seed of the shared `Graphs_CAT_STD_0_T` registry, relationship/role vocabularies, and trace profiles. Takes `column_lineage_enabled` to gate the `column-lineage` facet's catalogue rows, and writes the registered `graph_key` back onto this product's `data_product_map.graph_key` ([Teradata/ai-native-data-products#65](https://github.com/Teradata/ai-native-data-products/issues/65)) so a consumer can resolve it from the product prefix alone. |
 | `09-load-lineage.sql.j2` | Set-based, idempotent load from `data_lineage` / `.agent_outcome` (above) into `05-graph-tables.sql.j2`'s node/edge tables. Also takes `column_lineage_enabled`. |
 | `10-access.dcl.sql.j2` | Implied grants, this graph's `R_Graphs_{{ graph_key }}_READ` role, and registration into the shared `R_Graphs_USR_APP` consumer role. |
 

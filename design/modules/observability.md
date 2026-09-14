@@ -304,7 +304,7 @@ A product that does not enable `graph-lineage` gets the tabular `lineage_graph` 
 - [ ] Separate retention policies for definition vs execution (`INV-OBS-004`).
 - [ ] Validation results homed here (`INV-OBS-005`); `lineage_graph` / `lineage_run_latest` deployed to Semantic.
 - [ ] Entities registered in the Semantic map (`SemanticRegistration`); documentation captured, including the lineage split as a design decision.
-- [ ] If `graph-lineage` is enabled: graph key chosen and unique across the estate (`INV-OBS-008`); catalogue rows registered before the ACL views are published; `R_Graphs_<KEY>_READ` is the only grant issued.
+- [ ] If `graph-lineage` is enabled: graph key chosen and unique across the estate (`INV-OBS-008`); catalogue rows registered before the ACL views are published; `R_Graphs_<KEY>_READ` is the only grant issued; the same graph key is written back onto this product's `Semantic.data_product_map.graph_key` (`OBSERVABILITY` row) so a consumer can resolve it from the product prefix alone, without guessing a naming convention.
 - [ ] `column-lineage` enabled only if column-level lineage is in scope for this product; the `DataLineage` column extension populated and catalogue rows registered together, never one without the other.
 - [ ] This document passes the design linter with no ignore directive.
 

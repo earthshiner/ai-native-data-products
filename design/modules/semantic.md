@@ -140,6 +140,7 @@ Entity: DataProductMap            [kind: Record]  // module registry
   container_name: ShortText [required]  // where the module is deployed (critical for discovery)
   module_version: ShortText [optional]
   deployment_status: Enum{DEPLOYED|PLANNED|DEPRECATED} [required]
+  graph_key: ShortText [optional]  // Observability's graph-lineage facet only; null unless enabled
   is_active: Flag
 
 Entity: PrimaryObject             [kind: Record]  // one row per agent-facing object
