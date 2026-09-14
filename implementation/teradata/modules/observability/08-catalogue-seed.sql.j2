@@ -1,6 +1,6 @@
 {#
-  Data Product Lineage: shared graph-explorer catalogue seed (Teradata). Binding of
-  the external Teradata Graph Explorer data contract, sections 5 and 8.5.
+  Observability: graph-lineage facet, shared graph-explorer catalogue seed (Teradata).
+  Binding of the external Teradata Graph Explorer data contract, sections 5 and 8.5.
 
   Writes into the SHARED Graphs_CAT_STD_0_T catalogue, not this package's own data
   plane - every graph in the estate registers here. Idempotent per the contract:
@@ -8,12 +8,12 @@
   by its children, so a re-run never leaves an orphaned or half-updated graph.
 
   Template variables:
-    graph_key             : as in 01-graph-tables.sql.j2.
+    graph_key             : as in 05-graph-tables.sql.j2.
     display_name          : human picker label, e.g. "Demo Lineage" (<=128 chars).
     description           : one-line domain description (<=512 chars).
     sort_order            : stable graph-picker ordering (integer).
     column_lineage_enabled: whether this product has enabled the `column-lineage` facet
-                            (design/modules/data-product-lineage.md 9.1 / DEC-GRAPH-COLUMN-LINEAGE).
+                            (design/modules/observability.md 8.1 / DEC-GRAPH-COLUMN-LINEAGE).
                             Gates the `COLUMN` role, the `derives_column` relationship, and
                             column-grain trace legs below, so a product that has not opted in
                             does not advertise `ColumnGrainLineageTraversal` in the catalogue.
@@ -40,7 +40,7 @@ VALUES (
 );
 
 -- Relationship vocabulary (graph-data-contract.md 5.2): every edge_type value this
--- graph can emit, all ASYMMETRIC - see design/modules/data-product-lineage.md 4.3.
+-- graph can emit, all ASYMMETRIC - see design/modules/observability.md 4.1.
 INSERT INTO Graphs_CAT_STD_0_T.graph_relationship (graph_key, relationship, symmetry)
 VALUES ('{{ graph_key }}', 'produces',       'ASYMMETRIC');
 {%- if column_lineage_enabled %}
@@ -53,8 +53,8 @@ INSERT INTO Graphs_CAT_STD_0_T.graph_relationship (graph_key, relationship, symm
 VALUES ('{{ graph_key }}', 'queried_in',     'ASYMMETRIC');
 
 -- Role vocabulary (graph-data-contract.md 5.3): every (category, node_role) this
--- graph's load path can emit - see design/modules/data-product-lineage.md 4.1.
--- node_role stays NULL until an analysis run classifies it (01-graph-tables.sql.j2),
+-- graph's load path can emit - see design/modules/observability.md 4.1.
+-- node_role stays NULL until an analysis run classifies it (05-graph-tables.sql.j2),
 -- so only the null-role combination is declared for each category today.
 INSERT INTO Graphs_CAT_STD_0_T.graph_role (graph_key, category, node_role)
 VALUES ('{{ graph_key }}', 'TABLE',         NULL);
@@ -70,7 +70,7 @@ INSERT INTO Graphs_CAT_STD_0_T.graph_role (graph_key, category, node_role)
 VALUES ('{{ graph_key }}', 'QUERY_SESSION', NULL);
 
 -- Trace profiles (graph-data-contract.md 5.4) - see
--- design/modules/data-product-lineage.md 7.1.
+-- design/modules/observability.md 5.1.
 INSERT INTO Graphs_CAT_STD_0_T.graph_trace_profile (
       graph_key, profile_id, caption, tooltip
     , direction, relationship, stop_at_roles, max_depth

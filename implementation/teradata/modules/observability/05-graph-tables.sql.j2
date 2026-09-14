@@ -1,22 +1,22 @@
 {#
-  Data Product Lineage: graph base tables (Teradata). Binding of
-  design/modules/data-product-lineage.md, section 4 and 6.
+  Observability: graph-lineage facet, graph base tables (Teradata). Binding of
+  design/modules/observability.md, sections 4.1 and 5.1.
 
   Template variables:
     graph_key : this product's graph key suffix, e.g. "LIN_DEMO" (rendered as
                 Graphs_LIN_DEMO_STD_0_T per the external graph-explorer placement rule
-                - see design/modules/data-product-lineage.md section 7). Unique across
+                - see design/modules/observability.md section 5.1). Unique across
                 the whole graph-explorer estate, per DEC-GRAPH-SCOPE: one graph per
                 data product, never shared across products.
     product   : the source data product's name, e.g. "Demo" (its Observability
                 container is {{ product }}_Observability). Referenced only in a
-                column comment here; the load path in 05-load-lineage.sql.j2 is
+                column comment here; the load path in 09-load-lineage.sql.j2 is
                 where it is actually queried.
 
   These are the Graph Product's OWN data plane (Graphs_<KEY>_STD_0_T), populated by
-  05-load-lineage.sql.j2 from this product's Observability tables. They are never
-  bound to directly by a consumer - see 03-graph-acl-views.sql.j2 for the contract
-  surface.
+  09-load-lineage.sql.j2 from this module's own data_lineage/agent_outcome tables. They
+  are never bound to directly by a consumer - see 07-graph-acl-views.sql.j2 for the
+  contract surface.
 
   Temporal profile: CURRENT_STATE. A node/edge is allocated once per natural key and
   never versioned (the graph-explorer contract requires a node identity to refer to
@@ -27,7 +27,7 @@
   Naming collision, deliberate: the external contract's recommended column is
   `created_dt` (singular), but this repository's own temporal-lifecycle-metadata
   pattern prohibits that exact name and requires `created_dts` (TLM-04). The base
-  table here follows this repository's house convention; 03-graph-acl-views.sql.j2 is
+  table here follows this repository's house convention; 07-graph-acl-views.sql.j2 is
   the one place that renames created_dts -> created_dt, because that view is the
   external contract surface and this table is not.
 #}
@@ -62,7 +62,7 @@ COMMENT ON COLUMN Graphs_{{ graph_key }}_STD_0_T.graph_nodes.natural_key IS
 COMMENT ON COLUMN Graphs_{{ graph_key }}_STD_0_T.graph_nodes.node_label IS
 'Full human-readable label. Never truncated or ellipsised (graph-explorer contract 4.2).';
 COMMENT ON COLUMN Graphs_{{ graph_key }}_STD_0_T.graph_nodes.category IS
-'TABLE, COLUMN, JOB, AGENT, or QUERY_SESSION. See design/modules/data-product-lineage.md 4.1.';
+'TABLE, COLUMN, JOB, AGENT, or QUERY_SESSION. See design/modules/observability.md 4.1.';
 COMMENT ON COLUMN Graphs_{{ graph_key }}_STD_0_T.graph_nodes.community IS
 'Analytical community label. Engine-populated (Louvain or similar); NULL until an analysis run sets it.';
 COMMENT ON COLUMN Graphs_{{ graph_key }}_STD_0_T.graph_nodes.importance IS
@@ -99,7 +99,7 @@ COMMENT ON COLUMN Graphs_{{ graph_key }}_STD_0_T.graph_edges.source_node_id IS
 COMMENT ON COLUMN Graphs_{{ graph_key }}_STD_0_T.graph_edges.target_node_id IS
 'Downstream vertex (graph-explorer: node_j).';
 COMMENT ON COLUMN Graphs_{{ graph_key }}_STD_0_T.graph_edges.edge_type IS
-'produces, derives_column, accessed_by, or queried_in. Vocabulary-backed: see 04-catalogue-seed.sql.j2 graph_relationship rows.';
+'produces, derives_column, accessed_by, or queried_in. Vocabulary-backed: see 08-catalogue-seed.sql.j2 graph_relationship rows.';
 COMMENT ON COLUMN Graphs_{{ graph_key }}_STD_0_T.graph_edges.edge_weight IS
 'Always 1.0: this graph is unweighted (is_weighted=0 in the catalogue registry).';
 COMMENT ON COLUMN Graphs_{{ graph_key }}_STD_0_T.graph_edges.lineage_id IS

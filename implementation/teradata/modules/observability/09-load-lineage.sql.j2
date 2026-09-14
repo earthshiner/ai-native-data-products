@@ -1,26 +1,26 @@
 {#
-  Data Product Lineage: load path from Observability into the graph adapter (Teradata).
-  Binding of design/modules/data-product-lineage.md section 6.
+  Observability: graph-lineage facet, load path from data_lineage/agent_outcome into
+  the graph adapter (Teradata). Binding of design/modules/observability.md section 5.1.
 
   Reads {{ product }}_Observability.data_lineage and .agent_outcome; writes
   only into this package's own Graphs_{{ graph_key }}_STD_0_T tables
-  (INV-DPL-001: never writes back into Observability). Idempotent set-based
-  INSERT ... WHERE NOT EXISTS, the same idiom the temporal-lifecycle-metadata
-  pattern's own maintenance DML uses, run on whatever cadence DEC-GRAPH-LOAD-CADENCE
-  settles on for this product.
+  (INV-OBS-007: a read-derived exposure, never a second system of record).
+  Idempotent set-based INSERT ... WHERE NOT EXISTS, the same idiom the
+  temporal-lifecycle-metadata pattern's own maintenance DML uses, run on whatever
+  cadence DEC-GRAPH-LOAD-CADENCE settles on for this product.
 
   Node identity is allocated once per natural key and never renumbered (step 1-5
   only INSERT new natural keys; an existing node's node_id is untouched). Steps 6-9
   resolve natural keys to node_id and insert new edges only, deduplicated on
   (source_node_id, target_node_id, edge_type) by the table's own unique index.
 
-  Only active lineage definitions are loaded (INV-DPL-004, matching INV-OBS-006):
-  every read from data_lineage below carries WHERE dl.is_active = 1.
+  Only active lineage definitions are loaded (INV-OBS-006): every read from
+  data_lineage below carries WHERE dl.is_active = 1.
 
   Template variables:
-    product                : as in 01-graph-tables.sql.j2.
-    graph_key              : as in 01-graph-tables.sql.j2.
-    column_lineage_enabled : as in 04-catalogue-seed.sql.j2 - gates COLUMN node and
+    product                : as in 05-graph-tables.sql.j2.
+    graph_key              : as in 05-graph-tables.sql.j2.
+    column_lineage_enabled : as in 08-catalogue-seed.sql.j2 - gates COLUMN node and
                               derives_column edge population (steps 3 and 7) so a product
                               that has not enabled the column-lineage facet never loads
                               column-grain rows even if data_lineage happens to carry them.

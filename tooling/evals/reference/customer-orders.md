@@ -318,7 +318,7 @@ nothing more; lineage and quality are reached by joining on the entity reference
 presented through `AccessView`.
 
 **Invariants:** `INV-OBS-001`, `INV-OBS-002`, `INV-OBS-003`, `INV-OBS-004`,
-`INV-OBS-005`, `INV-OBS-006`.
+`INV-OBS-005`, `INV-OBS-006`, `INV-OBS-007`, `INV-OBS-008`, `INV-OBS-009`.
 
 ---
 
