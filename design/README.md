@@ -41,6 +41,7 @@ Generated from document frontmatter by [`tooling/catalogue`](../tooling/catalogu
 | Document | Anchor | Status | Provides | Requires | Decisions |
 |---|---|---|---|---|---|
 | [Access Layer Pattern](patterns/access-layer.md) | `access-layer` | standard | `AccessView` | `DocumentationCapture` | - |
+| [Enterprise Catalogue Interface Pattern](patterns/catalogue-interface.md) | `catalogue-interface` | draft | - | `AccessView`, `CurrentStateFilter`, `PointInTimeReconstruction`, `RichMetadata`, `SemanticRegistration`, `SoftDelete` | `DEC-TEMPORAL-PATTERN`, `DEC-DELETE-STRATEGY` |
 | [Object Placement Pattern](patterns/object-placement.md) | `object-placement` | standard | - | - | - |
 | [Physical Storage Pattern](patterns/physical-storage.md) | `physical-storage` | standard | - | - | - |
 | [Temporal Lifecycle Metadata Pattern](patterns/temporal-lifecycle-metadata.md) | `temporal-lifecycle-metadata` | standard | `CurrentStateFilter`, `PointInTimeReconstruction`, `SoftDelete` | `RichMetadata`, `SemanticRegistration` | - |
@@ -52,7 +53,7 @@ Generated from document frontmatter by [`tooling/catalogue`](../tooling/catalogu
 |---|---|---|---|---|---|
 | [Domain Module](modules/domain.md) | `domain` | standard | `AccessView`, `CurrentStateFilter`, `EntityJoinBack`, `NaturalKeyLookup`, `PointInTimeReconstruction`, `SoftDelete` | `DocumentationCapture`, `MetadataCoverageCheck`, `RichMetadata`, `SemanticRegistration`, `SurrogateKeyAllocation` | `DEC-TEMPORAL-PATTERN`, `DEC-COLUMN-STRATEGY`, `DEC-SURROGATE-ALLOCATION`, `DEC-DELETE-STRATEGY`, `DEC-TIMESTAMP-ZONE` |
 | [Memory Module](modules/memory.md) | `memory` | standard | `AgentContinuity`, `DocumentationCapture` | `DocumentationCapture`, `EntityJoinBack`, `NearestNeighbors`, `QualityScore`, `RichMetadata`, `SemanticRegistration` | `DEC-TEMPORAL-PATTERN`, `DEC-DELETE-STRATEGY`, `DEC-TIMESTAMP-ZONE` |
-| [Observability Module](modules/observability.md) | `observability` | standard | `ChangeEventCapture`, `LineageCapture`, `QualityScore` | `DocumentationCapture`, `EntityJoinBack`, `RichMetadata`, `SemanticRegistration` | `DEC-QUALITY-STORAGE`, `DEC-AUDIT-RETENTION`, `DEC-TIMESTAMP-ZONE` |
+| [Observability Module](modules/observability.md) | `observability` | standard | `AgentOutcomeCapture`, `ChangeEventCapture`, `ColumnGrainLineageTraversal`, `GraphNativeLineageTraversal`, `LineageCapture`, `QualityScore` | `DocumentationCapture`, `EntityJoinBack`, `RichMetadata`, `SemanticRegistration` | `DEC-QUALITY-STORAGE`, `DEC-AUDIT-RETENTION`, `DEC-TIMESTAMP-ZONE` |
 | [Prediction Module](modules/prediction.md) | `prediction` | standard | `AccessView`, `CurrentStateFilter`, `PointInTimeReconstruction` | `AccessView`, `CurrentStateFilter`, `DocumentationCapture`, `EntityJoinBack`, `PointInTimeReconstruction`, `RichMetadata`, `SemanticRegistration` | `DEC-TEMPORAL-PATTERN`, `DEC-DELETE-STRATEGY`, `DEC-TIMESTAMP-ZONE` |
 | [Search Module](modules/search.md) | `search` | standard | `ApproxIndex`, `Embed`, `NearestNeighbors` | `AccessView`, `CurrentStateFilter`, `DocumentationCapture`, `EntityJoinBack`, `RichMetadata`, `SemanticRegistration` | `DEC-TEMPORAL-PATTERN`, `DEC-DELETE-STRATEGY`, `DEC-TIMESTAMP-ZONE` |
 | [Semantic Module](modules/semantic.md) | `semantic` | standard | `SemanticRegistration` | `DocumentationCapture`, `EntityJoinBack`, `RichMetadata` | `DEC-TIMESTAMP-ZONE` |

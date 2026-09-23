@@ -226,11 +226,31 @@ Entity: CustomerKeymap            [kind: Keymap]
 
 Every entity above, plus the Search, Prediction, Observability, and Memory entities,
 registers on deploy through `SemanticRegistration`. The relationship graph carries
-Customer to Order, and Order to Product through OrderLine. The orientation manifest is
-the product entry point, so agents orient before touching data.
+Customer to Order, and Order to Product through OrderLine.
+
+The orientation relation lists the product's resources in `discovery_order` with the
+trust map ordered before every analytical resource, so agents orient and read how far each
+area can be trusted before touching data. The manifest is a generated view over the registry and that
+orientation relation, so it cannot drift from the metadata it summarises.
+
+Consumers resolve the object to query through the access-object registry rather than
+object names: each current view is registered against the entity it represents, and the
+enriched Order-with-lines view is a `COMPOSITE` whose members (Order as anchor, OrderLine,
+Product) are recorded so an agent expands it from metadata. The registry is established
+once at deployment from verifiable structure.
+
+Three measures are published: `Order Value` (additive, grained on Order), `Units Sold`
+(additive, grained on OrderLine), and `Average Order Value` (a ratio, and therefore
+non-additive: summing it across customers or months gives a wrong answer rather than an
+imprecise one). Each carries an ANSI expression and a Teradata expression. Synonyms cover
+the terms the business uses that the schema does not: *basket* and *sale* for `Order`,
+*revenue* for `Order Value`.
 
 **Invariants:** `INV-SEMANTIC-001`, `INV-SEMANTIC-002`, `INV-SEMANTIC-003`,
-`INV-SEMANTIC-004`, `INV-SEMANTIC-005`, `INV-SEMANTIC-006`, `INV-SEMANTIC-007`.
+`INV-SEMANTIC-004`, `INV-SEMANTIC-005`, `INV-SEMANTIC-006`, `INV-SEMANTIC-007`,
+`INV-SEMANTIC-008`, `INV-SEMANTIC-009`, `INV-SEMANTIC-010`,
+`INV-SEMANTIC-011`, `INV-SEMANTIC-012`, `INV-SEMANTIC-013`,
+`INV-SEMANTIC-014`, `INV-SEMANTIC-015`.
 
 ---
 
@@ -306,7 +326,7 @@ nothing more; lineage and quality are reached by joining on the entity reference
 presented through `AccessView`.
 
 **Invariants:** `INV-OBS-001`, `INV-OBS-002`, `INV-OBS-003`, `INV-OBS-004`,
-`INV-OBS-005`, `INV-OBS-006`.
+`INV-OBS-005`, `INV-OBS-006`, `INV-OBS-007`, `INV-OBS-008`, `INV-OBS-009`.
 
 ---
 
