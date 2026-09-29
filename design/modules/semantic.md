@@ -111,7 +111,60 @@ Entity: TableRelationship         [kind: Record]
   is_active: Flag
 ```
 
-### 3.2 Registries and orientation
+### 3.2 Measures
+
+An entity catalogue says what exists and a relationship catalogue says how it joins. Neither says what a number *means*: whether revenue is gross or net, whether a balance may be summed across time, which of four plausible readings of "active customer" the business settled on. A consumer that has to reconstruct that from a column name reconstructs it differently each time, and two consumers then disagree about a figure they both believe they took from the product.
+
+Metrics are declared at model level rather than on an entity, because a metric may span several: a ratio over a fact and a dimension belongs to neither. `MetricDataset` records which entities a metric reads, so the entities a metric needs can be resolved without parsing its expression.
+
+```
+Entity: Metric                    [kind: Record]
+  metric_id: Identifier
+  metric_name: ShortText [required] [unique]  // business name (Total Sales, Churn Rate)
+  metric_description: Text [required]  // what it measures and what it excludes
+  metric_datatype: Code [optional]  // declared result type
+  aggregation_type: Enum{SUM|AVERAGE|COUNT|COUNT_DISTINCT|MIN|MAX|RATIO|DERIVED} [optional]
+  unit: ShortText [optional]  // currency code, percent, count, days
+  grain_description: Text [optional]  // the level the metric is defined at
+  is_additive: Flag  // may be summed across every dimension
+  is_active: Flag
+
+Entity: MetricExpression          [kind: Record]
+  metric_expression_id: Identifier
+  metric_name: Reference [required] [-> Metric]
+  sql_dialect: Code [required]  // the dialect this expression is written in
+  expression_text: Text [required]  // the calculation
+  is_active: Flag
+
+Entity: MetricDataset             [kind: Record]
+  metric_dataset_id: Identifier
+  metric_name: Reference [required] [-> Metric]
+  container_name: ShortText [optional]
+  table_name: ShortText [required]  // an entity the expression reads
+  dataset_role: Enum{PRIMARY|JOINED} [required]
+  is_active: Flag
+```
+
+**A metric carries its expression once per dialect, not once.** The same metric is evaluated by the product's own platform, by a consuming tool that pushes down its own SQL, and by a catalogue that only displays it. One expression per dialect keeps those the same definition rather than three that drift; a product with a single platform declares a single dialect and loses nothing.
+
+**`is_additive` is a correctness flag, not documentation.** A consumer that sums a non-additive measure across time produces a number that is wrong rather than approximate, and nothing downstream can detect it. Declaring it is what lets a tool refuse.
+
+### 3.3 Synonyms
+
+```
+Entity: SemanticSynonym           [kind: Record]
+  synonym_id: Identifier
+  object_kind: Enum{ENTITY|COLUMN|METRIC} [required]
+  container_name: ShortText [optional]  // absent for a metric, which is model-level
+  object_name: ShortText [required]  // entity, table, or metric name
+  column_name: ShortText [optional]  // present when object_kind is COLUMN
+  synonym_text: ShortText [required]  // the alternative term
+  is_active: Flag
+```
+
+The terms a business uses are not the terms a schema uses, and the gap is where natural-language questions fail. A synonym set is separate from the glossary Memory holds: a glossary term is a definition a person reads, a synonym is an alias a resolver matches on.
+
+### 3.4 Registries and orientation
 
 ```
 Entity: DataProductRegistry       [kind: Record]  // product-level orientation anchor
@@ -140,6 +193,7 @@ Entity: DataProductMap            [kind: Record]  // module registry
   container_name: ShortText [required]  // where the module is deployed (critical for discovery)
   module_version: ShortText [optional]
   deployment_status: Enum{DEPLOYED|PLANNED|DEPRECATED} [required]
+  graph_key: ShortText [optional]  // Observability's graph-lineage facet only; null unless enabled
   is_active: Flag
 
 Entity: PrimaryObject             [kind: Record]  // one row per agent-facing object
@@ -151,9 +205,55 @@ Entity: PrimaryObject             [kind: Record]  // one row per agent-facing ob
   object_role: Enum{AGENT_ENTRYPOINT|ANALYTICAL_QUERY|REFERENCE_LOOKUP|RELATIONSHIP_BRIDGE|LINEAGE_EVIDENCE|OPERATIONAL_METRIC|WRITE_TARGET|INTERNAL_SUPPORT} [required]
   usage_guidance: Text [optional]
   is_active: Flag
+
+Entity: DataProductOrientation    [kind: Record]  // one ordered row per product resource
+  orientation_id: Identifier
+  product_id: NaturalKey [required]  // the product this resource belongs to (DataProductRegistry.product_id)
+  resource_role: Enum{MANIFEST|TRUST_MAP|MODULE_MAP|OBJECT_CATALOGUE|ENTITY_CATALOGUE|COLUMN_CATALOGUE|RELATIONSHIP_CATALOGUE|RELATIONSHIP_PATHS|LINEAGE|QUERY_COOKBOOK|GLOSSARY|DESIGN_DECISIONS|POLICY|QUALITY} [required]  // open vocabulary; one role per row, never a list; TRUST_GATE is the legacy spelling of TRUST_MAP
+  container_name: ShortText [optional]  // deployed container, for object-backed resources
+  object_name: ShortText [optional]  // deployed object; used verbatim, never derived
+  resource_uri: ShortText [optional]  // URI for an MCP or external resource, when not a database object
+  usage_guidance: Text [optional]  // how a consumer should use this resource
+  is_required: Flag  // a missing required resource is a conformance failure
+  discovery_order: Integer [required]  // ascending processing order; the trust map precedes every analytical resource
+  is_active: Flag
 ```
 
 `ViewMetadata` (one row per base-table exposure, with a `view_type` and a single primary exposure per base table) and `ViewColumnType` (curated types for view columns) complete the catalogue; both are platform-detail-heavy and specified in the implementation.
+
+### 3.3 Access-object layer
+
+The catalogue above models entities and how they relate; it does not model the **access layer** — which objects a consumer actually queries. A platform security model may expose one entity through several objects (locking, business, current views), and a product may publish composite ("enriched") objects that join several entities into one unit. `AccessObject` registers those facts so a consumer resolves any queryable object to its logical meaning **once, from metadata**, rather than reverse-engineering it from names or definitions. This is *access-layer metadata* — which objects represent what — distinct from the security [access-layer pattern](../patterns/access-layer.md), which governs who may read them.
+
+```
+Entity: AccessObject              [kind: Record]  // one row per consumable object
+  access_object_id: Identifier
+  container_name: ShortText [required]  // where the object is deployed
+  object_name: ShortText [required]  // the queryable object
+  access_role: Enum{BASE|PASSTHROUGH|COMPOSITE} [required]  // open vocabulary; extensions add roles
+  represents_entity: ShortText [optional]  // entity this exposes (EntityMetadata.entity_name); null for cross-entity composites
+  object_grain: ShortText [optional]  // plain-language grain, e.g. one row per call
+  is_agent_consumable: Flag  // whether an agent should query this object directly
+  resolves_to_object: ShortText [optional]  // for 1:1 passthroughs, the object it maps straight through to
+  access_note: Text [optional]  // locking, filtering, or usage guidance
+  is_active: Flag
+
+Entity: AccessComposition         [kind: Record]  // one row per member of a COMPOSITE object
+  access_composition_id: Identifier
+  composite_container: ShortText [required]
+  composite_object: ShortText [required]  // the composite being described
+  member_seq: Integer [required]  // ordering of the member within the composite
+  member_entity: ShortText [required]  // entity the member represents (EntityMetadata.entity_name)
+  member_role: Enum{ANCHOR|INNER|LEFT|RIGHT|FULL} [required]  // join role within the composite
+  join_path: Text [optional]  // entity-level join condition, same form as the path-discovery joins
+  is_grain_contributor: Flag  // whether this member changes the composite's grain
+  member_note: Text [optional]
+  is_active: Flag
+```
+
+**Consumption contract (normative).** A consumer selecting data resolves through `AccessObject` — it chooses objects marked agent-consumable and reads `represents_entity` — rather than querying base tables directly. A `COMPOSITE` object is presented as a single unit; its internal structure is read from `AccessComposition`, never by parsing a definition or recomputing column lineage at consumption time. Emitted joins target consumable objects (access-resolved, §5), not base tables. **Object names are not a contract:** no consumer infers an object's role, layer, entity, or purpose from its name; the registry is the single source of truth (`INV-SEMANTIC-008`).
+
+**Establishment and ownership (normative).** This metadata is **established once at deployment** by a registration step, defined here by responsibility rather than by tool. The step classifies objects from **verifiable structure** — the dependency graph and object definitions — not from names, and asserts the result in the registry; consumers read it and never recompute it. The concrete role vocabulary beyond the small open baseline, the physical realisation, and the population step are platform concerns (implementation). `AccessObject` is authoritative for object multiplicity per entity; `EntityMetadata.view_name` is retained as the denormalised "canonical consumable object" pointer, and `BASE`/`PASSTHROUGH` rows may be backfilled from `ViewMetadata`.
 
 ---
 
@@ -168,7 +268,13 @@ Discovery is **product-first, not tables-first** (`INV-SEMANTIC-004`). A client 
 3. The manifest recommends navigation: contract → semantic model → policy → quality → lineage → approved data access.
 4. It queries data **only** through the approved entrypoint.
 
-Where the product is reached over MCP, the orientation layer is exposed as **resources first** (the product list, per-product manifest, contract, semantic model, policy, quality, lineage, physical map) and **tools second** (search products, describe a product, get the recommended entrypoint, query approved data, explain an access path). The registry also designates the **gate-authoritative producer** the [validation pattern](../patterns/validation.md) reads, and its `manifest` records the entrypoints and recommended navigation.
+Where the product is reached over MCP, the orientation layer is exposed as **resources first** (the product list, per-product manifest, contract, semantic model, policy, quality, lineage, physical map) and **tools second** (search products, describe a product, get the recommended entrypoint, query approved data, explain an access path). The registry also designates the **trust-authoritative producer** the [validation pattern](../patterns/validation.md) reads, and its `manifest` records the entrypoints and recommended navigation.
+
+**The orientation relation (normative).** The handshake above is backed by a queryable, ordered relation, `DataProductOrientation` — one row per product resource, its `resource_role`, where it lives, whether it is required, and the `discovery_order` to process it — so a consumer reads the sequence rather than knowing repository conventions or inventing one, and a validator can *check* it. The baseline required roles a conformant product publishes, in canonical order, are: `MANIFEST`, `TRUST_MAP`, `MODULE_MAP`, `OBJECT_CATALOGUE`, `ENTITY_CATALOGUE`, `COLUMN_CATALOGUE`, `RELATIONSHIP_CATALOGUE`; `RELATIONSHIP_PATHS`, `LINEAGE`, `QUERY_COOKBOOK`, `GLOSSARY`, `DESIGN_DECISIONS` are optional, and `POLICY` / `QUALITY` are published where they apply. The vocabulary is open: an extension may add roles.
+
+**Consumption contract (normative).** A consumer processes resources in ascending `discovery_order`; reads the `TRUST_MAP` resource **before** any analytical resource, and carries the confidence it found there into what it reports (the [validation pattern](../patterns/validation.md)); resolves every `is_required` resource, treating a missing one as a conformance failure; and uses the stored `container.object` (or `resource_uri`) **verbatim**, never deriving object names from conventions (`INV-SEMANTIC-011`).
+
+**The manifest is generated, not authored (normative).** The machine-readable manifest is a **view derived** from `DataProductRegistry` and `DataProductOrientation` — it pivots the ordered resources into named entrypoint columns — so it cannot drift from the metadata it summarises (`INV-SEMANTIC-012`). The registry's serialised `manifest` remains the whole-document form for clients that want it in one read, regenerated from the same authoritative metadata rather than hand-authored to diverge.
 
 **`DD-DISCOVERY-001`.** Deploying the orientation layer settles one decision and records it: *how does an agent that knows only the product's name reach data it is allowed to use?* The record names which manifest fields are populated and why, the approved entrypoint and access mode, and the navigation the manifest recommends. What makes it worth recording rather than inferring is that the answer is a set of choices the deployed metadata cannot explain about itself: an agent can read that an entrypoint is approved, not why that surface was chosen as the approved one, nor what an agent arriving without a product name is expected to do.
 
@@ -194,6 +300,8 @@ An entity that appears in `EntityMetadata` but in no `TableRelationship` is eith
 
 **Derived relationships are registered without exception.** Some relationships in the table above are chosen; others follow mechanically from a modelling decision already taken, and those are the ones that go missing. Where `DEC-SURROGATE-ALLOCATION` is settled as `keymap`, every entity allocated that way has an entity-to-keymap relationship, for every such entity, not for the first one. The characteristic failure is registering one instance of a derived shape and treating the rest as covered: three entities share the pattern, one gets a row, and the other two appear as isolated entities that no agent can traverse to. Anything derivable this way is generated from the model rather than enumerated by hand, because a list maintained by hand is a list that ends after the first entry.
 
+**Access-resolved paths.** The path-discovery surface is the logical, entity-level truth, and its joins are expressed against base tables. Where a platform exposes a separate consumable layer (§3.3), those joins point at objects an agent may not query, or at the wrong grain. An **access-resolved** surface rewrites each path endpoint to the entity's canonical consumable object — the agent-consumable `AccessObject`, collapsing any `resolves_to_object` chain — so an agent receives joins written against objects it can actually query. What it contains is normative; whether it is persisted as a view or a refreshed table is a platform decision (implementation). A path whose endpoint entity has no consumable object is omitted, not emitted against a base table.
+
 ---
 
 ## 6. Agent Discovery
@@ -207,6 +315,8 @@ The discovery order realises [Master](../core/MASTER_DESIGN.md):
 5. **Relationship**: read the path-discovery surface to join.
 
 A live **column catalogue** joins the deployed structural facts to the curated `ColumnMetadata`, carrying the **provenance** of every resolved value (declared-type source, description source, documentation coverage) so consumers see a complete schema without the curated store copying structural facts. Its construction is platform-specific (implementation).
+
+Before emitting a query, an agent resolves the object to read through `AccessObject` (§3.3): it selects an agent-consumable object for the entity, expands any `COMPOSITE` from `AccessComposition`, and takes join targets from the access-resolved paths — so it queries the objects the product intends, at the right grain, without inferring anything from a name.
 
 ---
 
@@ -264,12 +374,20 @@ Semantic never becomes a dependency of the modules it describes: it observes and
 - `INV-SEMANTIC-005`: `TableRelationship` registers every relationship an agent is expected to traverse; an unrelated entity is a documented standalone or an omission.
 - `INV-SEMANTIC-006`: every entity declares its temporal profile in `EntityMetadata.temporal_pattern`, so validators resolve temporal behaviour from metadata (the `temporal-lifecycle-metadata` pattern).
 - `INV-SEMANTIC-007`: primary-object roles come from the controlled vocabulary; at most one primary exposure per base table.
+- `INV-SEMANTIC-008`: a consumer resolves the object to query through `AccessObject` (an agent-consumable object), never by inferring an object's role, layer, or entity from its name; the registry is the single source of truth and is established once at deployment from verifiable structure.
+- `INV-SEMANTIC-009`: every `AccessObject.represents_entity` and every `AccessComposition.member_entity` resolves to a catalogued `EntityMetadata` entity; a non-`COMPOSITE` consumable object names the entity it represents.
+- `INV-SEMANTIC-010`: a `COMPOSITE` object's structure is recorded in `AccessComposition` with exactly one `ANCHOR` member, and is expanded as a unit from that metadata, never by parsing the object's definition.
+- `INV-SEMANTIC-011`: the orientation relation lists the required baseline resources, one row per role, in ascending `discovery_order` with the trust map ordered before every analytical resource; consumers use stored identities verbatim, and a missing required resource is a conformance failure.
+- `INV-SEMANTIC-012`: the machine-readable manifest is generated from the registry and orientation relation (a derived view), never hand-authored, so it cannot drift from its sources.
+- `INV-SEMANTIC-013`: every registered metric carries at least one expression, each in a declared dialect, and no two expressions of one metric declare the same dialect.
+- `INV-SEMANTIC-014`: every dataset a metric names is an entity registered in the same product, and every metric names exactly one dataset in the primary role.
+- `INV-SEMANTIC-015`: every synonym resolves to a registered entity, column or metric; a synonym is unique within the object it resolves to.
 
 ---
 
 ## 11. Designer Responsibilities
 
-**Designers supply:** the entity/column/relationship catalogue for every module; naming standards; the module map and primary objects with their roles; the product registry and manifest, including the gate-authoritative producer the [validation pattern](../patterns/validation.md) reads; the temporal profile per entity.
+**Designers supply:** the entity/column/relationship catalogue for every module; naming standards; the module map and primary objects with their roles; the product registry and manifest, including the trust-authoritative producer the [validation pattern](../patterns/validation.md) reads; the temporal profile per entity; the metrics the product publishes, with an expression per dialect and an additivity declaration; synonyms for the terms consumers use.
 
 **Design review checklist:**
 
@@ -277,9 +395,13 @@ Semantic never becomes a dependency of the modules it describes: it observes and
 - [ ] Entities, columns, relationships, and primary objects registered for every deployed module (`SemanticRegistration`).
 - [ ] Each entity declares its temporal profile (`INV-SEMANTIC-006`).
 - [ ] The product registry and manifest are populated; discovery is product-first (`INV-SEMANTIC-004`).
-- [ ] The manifest names the `gate_authoritative_producer`, settled as a design decision per the [validation pattern](../patterns/validation.md). One producer still needs naming.
+- [ ] The manifest names the `trust_authoritative_producer`, settled as a design decision per the [validation pattern](../patterns/validation.md). One producer still needs naming.
+- [ ] The orientation relation publishes the required baseline resources in `discovery_order` with the trust map first, and the manifest is a generated view over registry + orientation (`INV-SEMANTIC-011`, `INV-SEMANTIC-012`).
 - [ ] `TableRelationship` completeness verified; no undocumented isolated entity (`INV-SEMANTIC-005`).
 - [ ] Primary objects use verbatim identities and controlled roles (`INV-SEMANTIC-003`, `INV-SEMANTIC-007`).
+- [ ] Consumable objects registered in `AccessObject` and composites recorded in `AccessComposition`; consumers resolve through the registry, not object names (`INV-SEMANTIC-008` to `INV-SEMANTIC-010`).
+- [ ] Every published metric carries an expression per dialect, a primary dataset, and an additivity declaration (`INV-SEMANTIC-013`, `INV-SEMANTIC-014`).
+- [ ] Synonyms resolve to registered objects (`INV-SEMANTIC-015`).
 - [ ] Documentation capture completed, including `DD-DISCOVERY-001` when the orientation layer is deployed (see the orientation layer section for what it settles), and the ERD recipe `QC-SEMANTIC-002`.
 - [ ] This document passes the design linter with no ignore directive.
 

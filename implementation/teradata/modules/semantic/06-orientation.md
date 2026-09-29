@@ -1,6 +1,6 @@
 # Semantic: Data Product Orientation Layer (Teradata / MCP)
 
-Binding of [`design/modules/semantic.md`](../../../../design/modules/semantic.md), Data Product Orientation Layer. Product-first discovery: a client orients to the product before touching module maps or data. Backed by `governance.data_product_registry` (`03-registry.sql`); the manifest is stored in `manifest_json`.
+Binding of [`design/modules/semantic.md`](../../../../design/modules/semantic.md), Data Product Orientation Layer. Product-first discovery: a client orients to the product before touching module maps or data. Backed by `governance.data_product_registry` (`03-registry.sql`), the ordered `data_product_orientation` relation, and the generated `data_product_manifest` view (`09-orientation-manifest.sql.j2`). The MCP shapes and manifest document below are the *presentation* of that metadata; the ordered relation and generated view are the authoritative, conformance-checkable source, and `manifest_json` is the serialised whole-document form.
 
 ## MCP resource / tool shapes
 
@@ -58,7 +58,7 @@ recommended_navigation:
  - data_access
 ```
 
-The manifest tells the agent what the product is, what it means, what it trusts, what it may access, and how to proceed. The registry also names the **gate-authoritative producer** the [validation pattern](../../patterns/validation/) reads, so trust evaluation precedes analytical use.
+The manifest tells the agent what the product is, what it means, what it trusts, what it may access, and how to proceed. The registry also names the **trust-authoritative producer** (`trust_authoritative_producer`) whose per-area trust map the [validation pattern](../../patterns/validation/) reads, and the `TRUST_MAP` orientation role is ordered before every analytical resource, so an agent knows how far to trust an area before it queries it. `TRUST_GATE` is the legacy spelling of that role and readers honour both.
 
 ## Required documentation record
 
